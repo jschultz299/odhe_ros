@@ -1,0 +1,17 @@
+<launch>
+
+    <!--Use this section to start the Intel Depth Camera (Multiple Cameras)-->
+    <include file="$(find realsense2_camera)/launch/rs_multiple_devices.launch">
+
+        <rosparam>
+            /camera1/rgb_camera/auto_exposure_roi/left: 449
+            /camera1/rgb_camera/auto_exposure_roi/right: 831
+            /camera1/rgb_camera/auto_exposure_roi/top: 228
+            /camera1/rgb_camera/auto_exposure_roi/bottom: 492
+        </rosparam>
+        
+        <arg name="serial_no_camera1" value="035722250421"/>
+        <arg name="serial_no_camera2" value="f0140143"/>
+    </include>
+    
+</launch>

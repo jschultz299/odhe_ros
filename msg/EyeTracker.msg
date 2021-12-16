@@ -1,0 +1,9 @@
+Header header
+float32 x
+float32 y
+float32 z
+float32 azim
+float32 elev
+float32 roll
+float32 cursor_x
+float32 cursor_y

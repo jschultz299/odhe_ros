@@ -1,0 +1,44 @@
+<launch>
+
+    <!-- Launch Stereo camera-->
+    <group ns="camera1">
+        <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
+            <arg name="serial_no"             value="035722250421"/>
+            <arg name="initial_reset"         value="True"/>
+        </include>
+    </group>
+
+    <!-- Launch Lidar camera-->
+    <group ns="camera2">
+        <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
+            <arg name="serial_no"             value="f0140143"/>
+            <arg name="json_file_path"        value="/home/labuser/L515 settings.json"/>
+            <arg name="depth_width"           value="1024"/>
+            <arg name="depth_height"          value="768"/>
+            <arg name="confidence_width"      value="1024"/>
+            <arg name="confidence_height"     value="768"/>
+            <arg name="infra_width"           value="1024"/>
+            <arg name="infra_height"          value="768"/>
+            <arg name="align_depth"           value="True"/>
+            <arg name="initial_reset"         value="True"/>
+        </include>
+    </group>
+
+    <!-- Run tag detection -->
+    <include file="$(find apriltag2_ros)/launch/continuous_detection.launch">
+        <arg name="camera_name" value="/camera2/color" />
+        <arg name="image_topic" default="image_raw" />
+    </include>
+
+    <!-- Run arm camera network -->
+    <node name="arm_camera_network" pkg="odhe_ros" type="arm_camera_network_run.py" output="screen"/>
+
+    <!-- View output image with detected objects and tags-->
+    <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/arm_camera_objects" />
+    </node>
+
+    <!-- Run DLT -->
+    <!-- <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/> -->
+    
+</launch>

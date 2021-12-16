@@ -1,0 +1,13 @@
+Header header
+float32 head_x
+float32 head_y
+float32 head_z
+float32 head_azim
+float32 head_elev
+float32 head_roll
+float32 pupil_H1
+float32 pupil_V1
+float32 pupil_A1
+float32 pupil_H2
+float32 pupil_V2
+float32 pupil_A2

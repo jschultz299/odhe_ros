@@ -1,0 +1,42 @@
+<launch>
+    <!-- 
+    <node pkg="baxter_tools" name="baxter_enabler" type="enable_robot.py" output="screen" args="-e" /> 
+    <node pkg="baxter_interface" name="jt_action_server" type="joint_trajectory_action_server.py" output="screen"/> 
+    -->
+
+    <rosparam>
+        /camera/rgb_camera/auto_exposure_roi/left: 449
+        /camera/rgb_camera/auto_exposure_roi/right: 831
+        /camera/rgb_camera/auto_exposure_roi/top: 228
+        /camera/rgb_camera/auto_exposure_roi/bottom: 492
+    </rosparam>
+
+    <!--Use this section to start the Intel Depth Camera-->
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+
+    <!--Use this section to visualize the Depth Camera Image Stream-->
+    <!--
+    <node name="view_rgb_image1" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/camera1/color/image_raw" />
+    </node>
+
+    <node name="view_rgb_image2" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/camera2/color/image_raw" />
+    </node>
+    -->
+
+    <!-- Use this section to run faster rcnn object detection
+    <node pkg="odhe_ros" name="rcnn" type="faster-rcnn.py" output="screen"/>
+
+    <node name="rcnn_output" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/rcnn_output_image" />
+    </node>
+    -->
+
+    <!--
+    <node name="tag_detections" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/tag_detections_image" />
+    </node>
+    -->
+    
+</launch>

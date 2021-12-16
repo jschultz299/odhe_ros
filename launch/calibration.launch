@@ -1,0 +1,26 @@
+<launch>
+    <arg name="publish_rate" default="5" />
+    <!-- 
+    <node pkg="baxter_tools" name="baxter_enabler" type="enable_robot.py" output="screen" args="-e" /> 
+    <node pkg="baxter_interface" name="jt_action_server" type="joint_trajectory_action_server.py" output="screen"/> 
+    -->
+
+    <!--
+    <include file="$(find odhe_ros)/launch/continuous_detection.launch" />
+    <node name="camera" pkg="usb_cam" type="usb_cam_node" output="screen" >
+        <param name="video_device" value="/dev/video0" />
+        <param name="image_width" value="640" />
+        <param name="image_height" value="480" />
+        <param name="pixel_format" value="yuyv" />
+        <param name="camera_frame_id" value="camera" />
+        <param name="io_method" value="mmap"/>
+    </node>
+    
+    <node name="tag_detections" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/tag_detections_image" />
+    </node>
+    -->
+
+    <node pkg="odhe_ros" name="serial_read" type="serial_read2.py" args="$(arg publish_rate)" output="screen" />
+    
+</launch>

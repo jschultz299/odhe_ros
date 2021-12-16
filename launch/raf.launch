@@ -1,0 +1,58 @@
+<launch>
+
+    <!-- 
+    <node pkg="baxter_tools" name="baxter_enabler" type="enable_robot.py" output="screen" args="-e" /> 
+    <node pkg="baxter_interface" name="jt_action_server" type="joint_trajectory_action_server.py" output="screen"/> 
+    -->
+
+    <!-- Specify if you want to view node outputs-->
+    <arg name="cam_view" default="False"/> 
+    <arg name="network_output_view" default="True"/>
+
+    <!-- Start depth cameras -->
+    <include file="$(find odhe_ros)/launch/camera_multiple.launch"/>
+
+    <!-- View depth camera images -->
+    <group if="$(eval cam_view)">
+        <include file="$(find odhe_ros)/launch/camera_multiple_view.launch"/>
+    </group> -->
+
+    <!--Use this section to start the Intel Depth Camera-->
+    <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch"/> -->
+
+    <!-- Run Apriltag_ros Detections -->
+    <!-- <include file="$(find odhe_ros)/apriltag_ros/apriltag_ros/launch/continuous_detection.launch" >
+        <arg name="camera_name" value="/camera2" />
+        <arg name="image_topic" value="color/image_raw" />
+    </include> -->
+    
+    <!-- View Apriltag_ros Ouptut -->
+    <!-- <node name="tag_detections" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/tag_detections_image" />
+    </node> -->
+
+    <!-- Run custom tag detection script-->
+    <node name="tag_detection" pkg="odhe_ros" type="tag_detection.py" output="screen"/>
+
+    <!-- View tag detection Ouptut -->
+    <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/tag_detections_image" />
+    </node>
+
+    <!-- Run mask rcnn object detection on arm camera-->
+    <node name="arm_camera_network" pkg="odhe_ros" type="arm_camera_network_run.py" output="screen"/>
+
+    <!-- Run faster rcnn object detection on scene camera-->
+    <!-- <node name="scene_camera_network" pkg="odhe_ros" type="scene_camera_network_run.py" output="screen"/> -->
+
+    <!-- View arm camera network output-->
+    <!-- <group if="$(eval network_output_view)">
+        <node name="arm_camera_objects" pkg="image_view" type="image_view" respawn="false" output="screen">
+            <remap from="image" to="/arm_camera_objects" />
+        </node>
+    </group> -->
+
+    <!-- Run DLT program-->
+    <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/>
+    
+</launch>
