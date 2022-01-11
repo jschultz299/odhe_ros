@@ -540,8 +540,8 @@ class RAF_dataCollection():
             x = grasp_point2[0]
             y = grasp_point2[1]
         elif item_class == "celery":
-            x = grasp_point[0]
-            y = grasp_point[1]
+            x = grasp_point2[0]
+            y = grasp_point2[1]
         else:
             x = grasp_point[0]
             y = grasp_point[1]
@@ -563,7 +563,7 @@ class RAF_dataCollection():
 
         ### ------------------------- ###
 
-        # Find average depth value across object mask
+        ### Find average depth value across object mask ###
         coord = cv2.findNonZero(mask)
         depth_list = []
         for ii in range(len(coord)):
@@ -574,6 +574,8 @@ class RAF_dataCollection():
 
         depth_avg = np.mean(depth_list)
         depth_avg = depth_avg / 1000
+
+        ### ------------------------- ###
         
         X, Y = self.compute_position(x, y)
         depth = int(self.depth_array[int(centroid[1]), int(centroid[0])])   # depth_array index reversed for some reason

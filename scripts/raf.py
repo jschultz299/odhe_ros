@@ -342,6 +342,10 @@ class RAF_dataCollection():
         return estop_pressed
 
     def compute_position(self, x, y):
+        # Divide pixels by camera resolution for better numerical stability
+        x = x / 640
+        y = y / 480
+
         # This function computes (X,Y) meters from (x,y) pixels
         X = ( (self.dlt.P2 + x*self.dlt.P8)*(self.dlt.P6 + y) - (self.dlt.P5 + y*self.dlt.P8)*(self.dlt.P3 + x) ) / ( (self.dlt.P1 + x*self.dlt.P7)*(self.dlt.P5 + y*self.dlt.P8) - (self.dlt.P4 + y*self.dlt.P7)*(self.dlt.P2 + x*self.dlt.P8) )
         Y = ( (self.dlt.P4 + y*self.dlt.P7)*(self.dlt.P3 + x) - (self.dlt.P1 + x*self.dlt.P7)*(self.dlt.P6 + y) ) / ( (self.dlt.P1 + x*self.dlt.P7)*(self.dlt.P5 + y*self.dlt.P8) - (self.dlt.P4 + y*self.dlt.P7)*(self.dlt.P2 + x*self.dlt.P8) )
@@ -536,17 +540,47 @@ class RAF_dataCollection():
             x = grasp_point2[0]
             y = grasp_point2[1]
         elif item_class == "celery":
-            x = grasp_point[0]
-            y = grasp_point[1]
+            x = grasp_point2[0]
+            y = grasp_point2[1]
         else:
             x = grasp_point[0]
             y = grasp_point[1]
             print("Selected Item is not a Food Item.")
+
+        ### Draw grasp point on image ###
+        self.image_flag = 1
+        output = self.image.copy()
+
+        output = cv2.arrowedLine(output, mid, centroid, (0,255,0), 2)
+        output = cv2.circle(output, (x, y), 2, (255, 0, 0), -1)
+
+        im_rgb = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
+        self.im_msg = self.bridge.cv2_to_imgmsg(im_rgb, encoding="rgb8")
+
+        rospy.sleep(2.0)
+
+        self.image_flag = 0
+
+        ### ------------------------- ###
+
+        ### Find average depth value across object mask ###
+        coord = cv2.findNonZero(mask)
+        depth_list = []
+        for ii in range(len(coord)):
+            if int(self.depth_array[int(coord[ii][0][1]), int(coord[ii][0][0])]) == 0:
+                print("Zero depth for coordinate: ", [int(coord[ii][0][1]), int(coord[ii][0][0])])
+            else:
+                depth_list.append(int(self.depth_array[int(coord[ii][0][1]), int(coord[ii][0][0])]))
+
+        depth_avg = np.mean(depth_list)
+        depth_avg = depth_avg / 1000
+
+        ### ------------------------- ###
         
         X, Y = self.compute_position(x, y)
         depth = int(self.depth_array[int(centroid[1]), int(centroid[0])])   # depth_array index reversed for some reason
         depth = depth / 1000
-        point_camera = np.array([[X], [Y], [depth], [1]])
+        point_camera = np.array([[X], [Y], [depth_avg], [1]])
 
         point_robot = np.matmul(T, point_camera)
 
@@ -558,13 +592,13 @@ class RAF_dataCollection():
 
         return point_robot, gripper_angle
 
-    def acquire_item(self, joint_angles, point_robot, item):
+    def acquire_item(self, joint_angles, point_robot, item, table_height):
 
         self.move_to_angles(joint_angles)
 
         # The height adjust value lowers the gripper by the specified amount in meters
         if item == "pretzel":
-            height_adjust = 0       # .0025
+            height_adjust = .003       # .0025
         elif item == "carrot":
             height_adjust = .01        # .010
         elif item == "celery":
@@ -575,7 +609,15 @@ class RAF_dataCollection():
 
         acquire_x = point_robot[0][0]
         acquire_y = point_robot[1][0]
-        acquire_z = point_robot[2][0] - height_adjust
+        # acquire_z = point_robot[2][0] - height_adjust
+        acquire_z = point_robot[2][0]
+
+        # Make sure we don't hit the table
+        if acquire_z < table_height:
+            print("Possible table collision detected. Pose adjusted.")
+
+        while acquire_z < table_height:
+            acquire_z = acquire_z + .001        # Raise z-coord by 1mm until above table height
 
         current_pose = self.get_current_pose()
 
@@ -886,9 +928,9 @@ def main(run):
 
     # RAF Parameters
     state = 1               # determines experimental logic
-    sets_till_break = 2     # Number of food item sets until participant can take a break
+    sets_till_break = 5     # Number of food item sets until participant can take a break
 
-    num_sets = 2   # Number of trials to run. Each trial should have 6 food items.
+    num_sets = 10   # Number of trials to run. Each trial should have 6 food items.
                    # About 18 trials (108) food items should take an hour (non-stop)
     food_items_per_set = 6
     num_food_items = num_sets * food_items_per_set
@@ -997,6 +1039,11 @@ def main(run):
 
     bridge = CvBridge()
     limb = 'left'
+
+    # Read table height set in Calibration.py
+    with open('/home/labuser/raf/set_positions/table_height.pkl', 'rb') as handle:
+        table_height = pickle.load(handle)
+    handle.close()
 
     # Read home position set in Calibration.py
     with open('/home/labuser/raf/set_positions/home_position.pkl', 'rb') as handle:
@@ -1165,10 +1212,13 @@ def main(run):
                     selection_attempts_list.append(True)
                     if item_to_select_cls == "pretzel":
                         selection_attempts_pretzel_list.append(True)
+                        overall_attempts_pretzel_list.append(True)
                     elif item_to_select_cls == "carrot":
                         selection_attempts_carrot_list.append(True)
+                        overall_attempts_carrot_list.append(True)
                     elif item_to_select_cls == "celery":
                         selection_attempts_celery_list.append(True)
+                        overall_attempts_celery_list.append(True)
                     else:
                         print("Selected item class " + str(item_to_select_cls) + " is not a food item.")
                     
@@ -1245,7 +1295,7 @@ def main(run):
                     joint_angles = home_joint_angles
                     # joint_angles['left_w2'] = math.radians(-1*(gripper_angle - 90))
                     joint_angles['left_w2'] = math.radians(math.degrees(joint_angles['left_w2']) - (gripper_angle - 90))
-                    run.acquire_item(joint_angles, point_robot, selected_item_cls)
+                    run.acquire_item(joint_angles, point_robot, selected_item_cls, table_height)
 
                     acquisition_end_time = rospy.get_time()
                     

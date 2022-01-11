@@ -273,7 +273,7 @@ def main():
     P2 = list()
     Z = list()
 
-    calibration_points = input("Enter number of calibration points.")
+    calibration_points = input("Enter number of calibration points.\n")
 
     print("\n######### Starting Calibration Sequence #########")
     print("Points to calibrate: ", str(calibration_points))

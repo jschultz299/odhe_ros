@@ -41,6 +41,6 @@
     </node>
 
     <!-- Run DLT -->
-    <!-- <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/> -->
+    <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/>
     
 </launch>

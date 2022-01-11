@@ -50,7 +50,8 @@ class DLT(object):
             elif id == 3:
                 self.last_top_left = np.array(tag_array.detections[i].center)
             else:
-                print("Exactly 4 tags should be visible!")
+                # print("Exactly 4 tags should be visible!")
+                pass
 
 
         # print("Top Left: " + str(self.last_top_left))
