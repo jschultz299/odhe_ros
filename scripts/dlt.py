@@ -8,7 +8,7 @@
 Robot-Assisted Feeding for Individuals with Spinal Cord Injury
 """
 
-import rospy
+import rospy, sys, pickle
 import numpy as np
 # from std_msgs.msg import String
 from odhe_ros.msg import DltParams, TagDetectionArray
@@ -25,7 +25,7 @@ class DLT(object):
         self.y3 = 0
         self.x4 = 0
         self.y4 = 0
-        self.P = [0,0,0,0,0,0,0,0]
+        # self.P = [0,0,0,0,0,0,0,0]
 
         # Node cycle rate (in Hz).
         self.loop_rate = rospy.Rate(10)
@@ -53,61 +53,65 @@ class DLT(object):
                 # print("Exactly 4 tags should be visible!")
                 pass
 
+        self.x1 = self.last_top_right[0] / 640
+        self.y1 = self.last_top_right[1] / 480
+        self.x2 = self.last_bottom_right[0] / 640
+        self.y2 = self.last_bottom_right[1] / 480
+        self.x3 = self.last_bottom_left[0] / 640
+        self.y3 = self.last_bottom_left[1] / 480
+        self.x4 = self.last_top_left[0] / 640
+        self.y4 = self.last_top_left[1] / 480
 
-        # print("Top Left: " + str(self.last_top_left))
-        # print("Top Right: " + str(self.last_top_right))
-        # print("Bottom Right: " + str(self.last_bottom_right))
-        # print("Bottom Left: " + str(self.last_bottom_left))  
-        # print("\n-------------------------------\n")      
+    def compute_params(self,X1,Y1,X2,Y2,X3,Y3,X4,Y4):
+        temp1 = [X1, Y1, X2, Y2, X3, Y3, X4, Y4]
+        temp2 = [self.x1, self.y1, self.x2, self.y2, self.x3, self.y3, self.x4, self.y4]
+        print("Robot frame: ", temp1)
+        print("Camera frame (normalized): ", temp2)
+        A = np.array([[X1, Y1, 1, 0, 0, 0, self.x1*X1, self.x1*Y1], [0, 0, 0, X1, Y1, 1, self.y1*X1, self.y1*Y1], [X2, Y2, 1, 0, 0, 0, self.x2*X2, self.x2*Y2], [0, 0, 0, X2, Y2, 1, self.y2*X2, self.y2*Y2], [X3, Y3, 1, 0, 0, 0, self.x3*X3, self.x3*Y3], [0, 0, 0, X3, Y3, 1, self.y3*X3, self.y3*Y3], [X4, Y4, 1, 0, 0, 0, self.x4*X4, self.x4*Y4], [0, 0, 0, X4, Y4, 1, self.y4*X4, self.y4*Y4]])
+        b = np.array([-self.x1, -self.y1, -self.x2, -self.y2, -self.x3, -self.y3, -self.x4, -self.y4])
+        P = np.linalg.solve(A, b)
+        return P
 
-        # DLT with 4 tags (center of each tag)
-        # These must be updated if the marker's positions are changed!
-        # Top left tag is the origin to stay consistent with image frame coordinates
-        # +X is to the right, +Y is down
-        X1 = 0          # Bottom left corner marker X coordinate (m)
-        Y1 = .25       # Bottom left corner marker Y coordinate (m)
-        X2 = .40       # Bottom right corner marker X coordinate (m)
-        Y2 = .25       # Bottom right corner marker Y coordinate (m)
-        X3 = .40       # Top right corner marker X coordinate (m)
-        Y3 = 0          # Top right corner marker Y coordinate (m)
-        X4 = 0          # Top left corner marker X coordinate (m)
-        Y4 = 0          # Top left corner marker Y coordinate (m)
-    
-        # Divide pixel by camera resolution to normalize between 0 and 1 for numerical stability
-        x1 = self.last_bottom_left[0] / 640
-        y1 = self.last_bottom_left[1] / 480
-        x2 = self.last_bottom_right[0] / 640
-        y2 = self.last_bottom_right[1] / 480
-        x3 = self.last_top_right[0] / 640
-        y3 = self.last_top_right[1] / 480
-        x4 = self.last_top_left[0] / 640
-        y4 = self.last_top_left[1] / 480
-        
-        A = np.array([[X1, Y1, 1, 0, 0, 0, x1*X1, x1*Y1], [0, 0, 0, X1, Y1, 1, y1*X1, y1*Y1], [X2, Y2, 1, 0, 0, 0, x2*X2, x2*Y2], [0, 0, 0, X2, Y2, 1, y2*X2, y2*Y2], [X3, Y3, 1, 0, 0, 0, x3*X3, x3*Y3], [0, 0, 0, X3, Y3, 1, y3*X3, y3*Y3], [X4, Y4, 1, 0, 0, 0, x4*X4, x4*Y4], [0, 0, 0, X4, Y4, 1, y4*X4, y4*Y4]])
-        b = np.array([-x1, -y1, -x2, -y2, -x3, -y3, -x4, -y4])
-        self.P = np.linalg.solve(A, b)
-
-        self.publish()
-
-    def publish(self):
+    def publish(self,P):
         msg = DltParams()
-        msg.P1 = self.P[0]
-        msg.P2 = self.P[1]
-        msg.P3 = self.P[2]
-        msg.P4 = self.P[3]
-        msg.P5 = self.P[4]
-        msg.P6 = self.P[5]
-        msg.P7 = self.P[6]
-        msg.P8 = self.P[7]
+        msg.P1 = P[0]
+        msg.P2 = P[1]
+        msg.P3 = P[2]
+        msg.P4 = P[3]
+        msg.P5 = P[4]
+        msg.P6 = P[5]
+        msg.P7 = P[6]
+        msg.P8 = P[7]
 
         self.pub.publish(msg)
         self.loop_rate.sleep()
-        
-    def start(self):
-        while not rospy.is_shutdown():
-            rospy.spin()
+
+def main():
+    rospy.init_node("DLT", anonymous=True)
+    run = DLT()
+    print("Initializing...")
+    rospy.sleep(2)
+
+    # Read tag positions in robot frame from file (set in calibrate_table.py)
+    with open('/home/labuser/raf/set_positions/tag_positions.pkl', 'rb') as handle:
+        tag_positions = pickle.load(handle)
+    handle.close
+
+    # This is the order tag positions should be recorded in calibrate_table.py
+    X1 = tag_positions[0][0]        # Top right corner marker X coordinate (m)
+    Y1 = tag_positions[0][1]        # Top right corner marker Y coordinate (m)
+    X2 = tag_positions[1][0]        # Bottom right corner marker X coordinate (m)
+    Y2 = tag_positions[2][1]        # Bottom right corner marker Y coordinate (m)
+    X3 = tag_positions[2][0]        # Bottom left corner marker X coordinate (m)
+    Y3 = tag_positions[2][1]        # Bottom left corner marker Y coordinate (m)
+    X4 = tag_positions[3][0]        # Top left corner marker X coordinate (m)
+    Y4 = tag_positions[3][1]        # Top left corner marker Y coordinate (m)
+
+    while not rospy.is_shutdown():
+        params = run.compute_params(X1,Y1,X2,Y2,X3,Y3,X4,Y4)
+        print("DLT Parameters: ", params)
+        print("------------------------------------\n")
+        run.publish(params)
 
 if __name__ == '__main__':
-    rospy.init_node("DLT", anonymous=True)
-    my_node = DLT()
-    my_node.start()
+    sys.exit(main())

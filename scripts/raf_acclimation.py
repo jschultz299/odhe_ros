@@ -916,9 +916,9 @@ def main(run):
     # RAF Parameters
     state = 1               # determines experimental logic
 
-    items_to_select = 10
-    items_to_acquire = 3
-    times_to_trigger = 10
+    items_to_select = 5
+    items_to_acquire =1
+    times_to_trigger = 5
     numFoodSets = 1
 
     # Set debug to True to move robot to starting joint angles and then just spin

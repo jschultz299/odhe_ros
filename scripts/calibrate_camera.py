@@ -16,6 +16,8 @@ import baxter_interface
 import cv2
 import math
 import pickle
+import tf.transformations as tf
+import time
 
 from baxter_core_msgs.srv import (
     SolvePositionIK,
@@ -218,6 +220,14 @@ class RAF_calibrate_camera():
 
         return T, rms
 
+    def soder_alt(self, P1, P2):
+        # This might work the same as soder using built in tf function
+        P1 = np.transpose(P1)
+        P2 = np.transpose(P2)
+        T = tf.superimposition_matrix(P1, P2)
+
+        return T
+
     def get_current_joint_angles(self):
         current_joint_angles = self._limb.joint_angles()
         return current_joint_angles
@@ -332,6 +342,9 @@ def main():
     P1 = np.array(P1)
     P2 = np.array(P2)
     T, rms = run.soder(np.asarray(P1), np.asarray(P2))
+
+    # This built in tf method is slightly faster
+    # T = run.soder_alt(np.asarray(P1), np.asarray(P2))
 
     # Test T
     # T = np.array([[ -0.6592,  0.7224,  -0.2086,  0.9492],

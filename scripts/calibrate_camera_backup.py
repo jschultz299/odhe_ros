@@ -16,6 +16,8 @@ import baxter_interface
 import cv2
 import math
 import pickle
+import tf.transformations as tf
+import time
 
 from baxter_core_msgs.srv import (
     SolvePositionIK,
@@ -25,8 +27,8 @@ from baxter_core_msgs.srv import (
 from odhe_ros.msg import Result, DltParams
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from std_msgs.msg import Float64MultiArray, MultiArrayLayout, MultiArrayDimension
 from tempfile import TemporaryFile
+from statistics import mean
 
 class RAF_calibrate_camera():
     def __init__(self, limb, verbose=True):
@@ -85,6 +87,10 @@ class RAF_calibrate_camera():
         self.dlt = msg
 
     def compute_position(self, x, y):
+        # Divide pixels by camera resolution for better numerical stability
+        # x = x / 640
+        # y = y / 480
+
         # This function computes (X,Y) meters from (x,y) pixels
         X = ( (self.dlt.P2 + x*self.dlt.P8)*(self.dlt.P6 + y) - (self.dlt.P5 + y*self.dlt.P8)*(self.dlt.P3 + x) ) / ( (self.dlt.P1 + x*self.dlt.P7)*(self.dlt.P5 + y*self.dlt.P8) - (self.dlt.P4 + y*self.dlt.P7)*(self.dlt.P2 + x*self.dlt.P8) )
         Y = ( (self.dlt.P4 + y*self.dlt.P7)*(self.dlt.P3 + x) - (self.dlt.P1 + x*self.dlt.P7)*(self.dlt.P6 + y) ) / ( (self.dlt.P1 + x*self.dlt.P7)*(self.dlt.P5 + y*self.dlt.P8) - (self.dlt.P4 + y*self.dlt.P7)*(self.dlt.P2 + x*self.dlt.P8) )
@@ -167,7 +173,7 @@ class RAF_calibrate_camera():
 
         # Centroid of food item
         centroid = (int((box[0][0] + box[2][0]) / 2), int((box[0][1] + box[2][1]) / 2))
-        return centroid
+        return centroid, mask
 
     def soder(self, P1, P2):
         # Inputs:
@@ -213,6 +219,14 @@ class RAF_calibrate_camera():
         rms = sqrt(sumsq/3/nmarkers)
 
         return T, rms
+
+    def soder_alt(self, P1, P2):
+        # This might work the same as soder using built in tf function
+        P1 = np.transpose(P1)
+        P2 = np.transpose(P2)
+        T = tf.superimposition_matrix(P1, P2)
+
+        return T
 
     def get_current_joint_angles(self):
         current_joint_angles = self._limb.joint_angles()
@@ -267,8 +281,9 @@ def main():
 
     P1 = list()
     P2 = list()
+    Z = list()
 
-    calibration_points = input("Enter number of calibration points.")
+    calibration_points = input("Enter number of calibration points.\n")
 
     print("\n######### Starting Calibration Sequence #########")
     print("Points to calibrate: ", str(calibration_points))
@@ -277,13 +292,32 @@ def main():
         # Save centroid of food item in camera frame
         input("\nPress Enter to save Point " + str(i+1) + " in camera frame...")
         # Compute centroid in pixels
-        centroid = run.compute_centroid()
+        # centroid = run.compute_centroid()
+        
+        ### BEGIN ADDED CODE ###
+        centroid, mask = run.compute_centroid()
+
+        coord = cv2.findNonZero(mask)
+
         # Convert centroid to meters
         X, Y = run.compute_position(centroid[0],centroid[1])
         depth_array = run.get_depth_array()
         depth = int(depth_array[int(centroid[1]), int(centroid[0])])   # depth_array index reversed for some reason
+
+        depth_list = []
+        for ii in range(len(coord)):
+            if int(depth_array[int(coord[ii][0][1]), int(coord[ii][0][0])]) == 0:
+                print("Zero depth for coordinate: ", [int(coord[ii][0][1]), int(coord[ii][0][0])])
+            else:
+                depth_list.append(int(depth_array[int(coord[ii][0][1]), int(coord[ii][0][0])]))
+
+        depth_avg = np.mean(depth_list)
+
         depth = depth / 1000
-        point_camera = [X, Y, depth]
+        depth_avg = depth_avg / 1000
+        print("Centroid Depth: ", depth)
+        print("Avg Mask Depth: ", depth_avg)
+        point_camera = [X, Y, depth_avg]
         print("Point " + str(i+1) + " in camera frame: " + str(point_camera))
 
         ##### ---> Physically move robot gripper to food item now <--- #####
@@ -297,6 +331,7 @@ def main():
         # Save points in both coordinate frames in a list
         P1.append(point_camera)
         P2.append(point_robot)
+        Z.append(current_pose['position'].z)
 
         # Move to starting location
         run.move_to_start(joint_angles)
@@ -307,6 +342,9 @@ def main():
     P1 = np.array(P1)
     P2 = np.array(P2)
     T, rms = run.soder(np.asarray(P1), np.asarray(P2))
+
+    # This built in tf method is slightly faster
+    # T = run.soder_alt(np.asarray(P1), np.asarray(P2))
 
     # Test T
     # T = np.array([[ -0.6592,  0.7224,  -0.2086,  0.9492],
@@ -327,7 +365,24 @@ def main():
 
     with open('/home/labuser/ros_ws/src/odhe_ros/scripts/Transformation.npy', 'wb') as f:
         np.save(f, T)
+    f.close()
     print("Transformation saved.")
+
+    max_z = max(Z)      # Highest table coordinate. This is the value we should not go lower than
+    avg_z = mean(Z)
+    min_z = min(Z)
+    print("\nZ Coordinate array: ", Z)
+    print("Maximum Z coordinate: ", max_z)
+    print("Average Z coordinate: ", avg_z)
+    print("Minimum Z coordinate: ", min_z)
+    
+    # Write to a text file
+    input("\nPress ENTER to save table height...")
+
+    with open("/home/labuser/raf/set_positions/table_height.pkl","wb") as file:
+        pickle.dump(min_z, file)    # Although intuitively should use the max, the min tends to yield the best results
+    file.close()
+    print("Table height saved.")
 
     return 0
 

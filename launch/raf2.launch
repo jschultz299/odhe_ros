@@ -1,12 +1,12 @@
 <launch>
 
     <!-- Launch Stereo camera-->
-    <group ns="camera1">
+    <!-- <group ns="camera1">
         <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
             <arg name="serial_no"             value="035722250421"/>
             <arg name="initial_reset"         value="True"/>
         </include>
-    </group>
+    </group> -->
 
     <!-- Launch Lidar camera-->
     <group ns="camera2">
@@ -41,6 +41,6 @@
     </node>
 
     <!-- Run DLT -->
-    <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/>
+    <!-- <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/> -->
     
 </launch>

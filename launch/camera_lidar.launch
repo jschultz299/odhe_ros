@@ -1,0 +1,29 @@
+<launch>
+
+    <!-- Specify if you want to view node outputs-->
+    <arg name="view" default="False"/> 
+
+    <!-- Launch Lidar camera-->
+    <group ns="camera2">
+        <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
+            <arg name="serial_no"             value="f0140143"/>
+            <arg name="json_file_path"        value="/home/labuser/L515 settings.json"/>
+            <arg name="depth_width"           value="1024"/>
+            <arg name="depth_height"          value="768"/>
+            <arg name="confidence_width"      value="1024"/>
+            <arg name="confidence_height"     value="768"/>
+            <arg name="infra_width"           value="1024"/>
+            <arg name="infra_height"          value="768"/>
+            <arg name="align_depth"           value="True"/>
+            <arg name="initial_reset"         value="True"/>
+        </include>
+    </group>
+
+    <!--Use this section to visualize the Depth Camera Image Stream-->
+    <group if="$(eval view)">
+        <node name="view_rgb_image2" pkg="image_view" type="image_view" respawn="false" output="screen">
+            <remap from="image" to="/camera2/color/image_raw" />
+        </node>
+    </group>
+    
+</launch>
