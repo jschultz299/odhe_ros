@@ -16,7 +16,7 @@ import baxter_interface
 import cv2
 import math
 import pickle
-import tf.transformations as tf
+import tf.transformations
 import time
 
 from baxter_core_msgs.srv import (
@@ -224,7 +224,7 @@ class RAF_calibrate_camera():
         # This might work the same as soder using built in tf function
         P1 = np.transpose(P1)
         P2 = np.transpose(P2)
-        T = tf.superimposition_matrix(P1, P2)
+        T = tf.transformations.superimposition_matrix(P1, P2)
 
         return T
 

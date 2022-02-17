@@ -33,7 +33,7 @@
     </include> -->
 
     <!-- Run arm camera network -->
-    <node name="arm_camera_network" pkg="odhe_ros" type="arm_camera_network_run.py" output="screen"/>
+    <node name="arm_camera_network" pkg="odhe_ros" type="raf_arm_camera_network_run.py" output="screen"/>
 
     <!-- View output image with detected objects and tags-->
     <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
@@ -41,6 +41,6 @@
     </node>
 
     <!-- Run DLT -->
-    <!-- <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/> -->
+    <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/>
     
 </launch>

@@ -107,6 +107,8 @@ def main():
         if img is not None:
             detections = run.detect_tags(img)
 
+            # print(detections)
+
             # Create the tag array to be published (pixels)
             tag_array = TagDetectionArray()
             for i in range(len(detections)):

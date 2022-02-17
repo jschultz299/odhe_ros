@@ -176,27 +176,32 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 # in contrast to setup.py, you can choose the destination
  catkin_install_python(PROGRAMS
-   scripts/serial_read.py
-   scripts/record_data.py
-   scripts/cup_demo.py
-   scripts/continuous_calibration.py
-   scripts/raf.py
-   scripts/raf_develop.py
-   scripts/raf_acclimation.py
-   scripts/raf_visualize_grasp.py
-   scripts/calibrate_camera.py
-   scripts/calibrate_table.py
+  #  scripts/serial_read.py
+  #  scripts/record_data.py
+  #  scripts/cup_demo.py
+  #  scripts/continuous_calibration.py
+   scripts/raf_study/raf.py
+   scripts/raf_study/raf_acclimation.py
+   scripts/raf_study/raf_calibrate_camera.py
+   scripts/raf_study/raf_arm_camera_network_run.py
+   scripts/raf_study/raf_develop.py
+  #  scripts/raf_visualize_grasp.py
    scripts/tag_detection.py
    scripts/dlt.py
-   scripts/raf_setPos_demo.py
-   scripts/raf_grasp_demo.py
+  #  scripts/raf_setPos_demo.py
+  #  scripts/raf_grasp_demo.py
    scripts/send_to_home.py
-   scripts/arm_camera_network/arm_camera_network_run.py
-   scripts/arm_camera_network/arm_camera_network_train.py
-   scripts/arm_camera_network/arm_camera_network_eval.py
-   scripts/scene_camera_network/scene_camera_network_run.py
-   scripts/scene_camera_network/scene_camera_network_train.py
-   scripts/scene_camera_network/scene_camera_network_eval.py
+  #  scripts/arm_camera_network/arm_camera_network_run.py
+  #  scripts/arm_camera_network/arm_camera_network_train.py
+  #  scripts/arm_camera_network/arm_camera_network_eval.py
+   scripts/arm_camera_network/arm_camera_network_run_update_class.py
+  #  scripts/scene_camera_network/scene_camera_network_run.py
+  #  scripts/scene_camera_network/scene_camera_network_train.py
+  #  scripts/scene_camera_network/scene_camera_network_eval.py
+   scripts/gpd/calibrate_table.py
+   scripts/gpd/deprojection_test.py
+   scripts/gpd/test_camera_register.py
+   scripts/gpd/arm_camera_network_run_gpd.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

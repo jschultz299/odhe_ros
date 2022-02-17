@@ -6,12 +6,9 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /RobotModel1
         - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /TF1/Tree1/world1/base1
-        - /TF1/Tree1/world1/base1/torso1
       Splitter Ratio: 0.6360294222831726
     Tree Height: 719
   - Class: rviz/Selection
@@ -32,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -336,7 +333,7 @@ Visualization Manager:
         _color_frame:
           Value: false
         _color_optical_frame:
-          Value: false
+          Value: true
         _depth_frame:
           Value: false
         _depth_optical_frame:
@@ -565,6 +562,14 @@ Visualization Manager:
           Value: true
         sonar_ring:
           Value: true
+        tag_0:
+          Value: true
+        tag_1:
+          Value: true
+        tag_2:
+          Value: true
+        tag_3:
+          Value: true
         torso:
           Value: true
         world:
@@ -577,6 +582,25 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          _link:
+            _aligned_depth_to_color_frame:
+              _color_optical_frame:
+                tag_0:
+                  {}
+                tag_1:
+                  {}
+                tag_2:
+                  {}
+                tag_3:
+                  {}
+            _color_frame:
+              {}
+            _depth_frame:
+              _depth_optical_frame:
+                {}
+            camera_confidence_frame:
+              camera_confidence_optical_frame:
+                {}
           base:
             collision_head_link_1:
               {}
@@ -690,18 +714,7 @@ Visualization Manager:
                                     reference/l_gripper_r_finger_tip:
                                       {}
                                   reference/left_gripper:
-                                    _link:
-                                      _aligned_depth_to_color_frame:
-                                        _color_optical_frame:
-                                          {}
-                                      _color_frame:
-                                        {}
-                                      _depth_frame:
-                                        _depth_optical_frame:
-                                          {}
-                                      camera_confidence_frame:
-                                        camera_confidence_optical_frame:
-                                          {}
+                                    {}
                                 reference/left_gripper_mass:
                                   reference/left_gripper_object_mass:
                                     {}
@@ -776,9 +789,9 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 1
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /camera/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
@@ -812,7 +825,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 1.5523221492767334
+      Distance: 2.0528817176818848
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -820,17 +833,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.148514986038208
-        Y: 0.5580584406852722
-        Z: -3.0057017283979803e-06
+        X: 1.4924533367156982
+        Y: -0.27217990159988403
+        Z: -3.1249037419911474e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.23999996483325958
+      Pitch: 0.27000004053115845
       Target Frame: <Fixed Frame>
-      Yaw: 0.3899972140789032
+      Yaw: 6.028181076049805
     Saved: ~
 Window Geometry:
   Displays:

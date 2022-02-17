@@ -12,7 +12,9 @@ import sys
 import rospy
 import baxter_interface
 import pickle
-
+import tf
+import tf.transformations as transform
+import numpy as np
 
 class RAF_calibrate_table():
     def __init__(self, limb, verbose=True):
@@ -63,6 +65,12 @@ class RAF_calibrate_table():
         current_joint_angles = self._limb.joint_angles()
         return current_joint_angles
 
+    def soder_alt(self, P1, P2):
+        P1 = np.transpose(P1)
+        P2 = np.transpose(P2)
+        T = transform.superimposition_matrix(P1, P2)
+        return T
+
 def main():
     """
     Record AR tag positions in robot frame
@@ -93,37 +101,96 @@ def main():
 
     run.move_to_start(joint_angles)
 
-    P = list()
-    Z = list()
+    P1 = list()
+    P2 = list()
 
     tag_name_list = ["Top Right", "Bottom Right", "Bottom Left", "Top Left"]
 
     num_points = 4
 
+    rate = rospy.Rate(10)
+    listener = tf.TransformListener()
+
+    # 1) Obtain tag positions in robot /base frame
     for i in range(num_points):
         # Move robot arm to tag centers in order
         input("\nMove robot arm to "  + str(tag_name_list[i]) + " tag center. Press ENTER to record.")
 
+        count = 0
+        while count < 10:
+            rate.sleep()
+            count += 1
+            try:
+                (point_robot, rot_robot) = listener.lookupTransform('/world', '/left_gripper', rospy.Time(0))
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("Error in transform lookup.")
+                continue
+
         # Save centroid of food item in robot frame
-        current_pose = run.get_current_pose()
-        point_robot = [current_pose['position'].x, current_pose['position'].y, current_pose['position'].z]
-        print("Point " + str(i+1) + " in robot frame: " + str(point_robot))
+        # current_pose = run.get_current_pose()
+        # point_robot = [current_pose['position'].x, current_pose['position'].y, current_pose['position'].z]
+        # print("Point " + str(i+1) + " in robot frame: " + str(point_robot))
 
         # Save tag positions in a list
-        P.append(point_robot)
+        P1.append(point_robot)
 
         # Move to starting location
         run.move_to_start(joint_angles)
 
     print("\nAll tag positions recorded.")
 
-    # Write to a text file
-    input("\nPress ENTER to save tag positions...")
+    # with open('/home/labuser/raf/set_positions/tag_positions_robot.pkl', 'rb') as handle:
+    #     P1 = pickle.load(handle)
+    # handle.close
 
-    with open("/home/labuser/raf/set_positions/tag_positions.pkl","wb") as file:
-        pickle.dump(P, file)    
+    # Write to a text file
+    input("\nPress ENTER to save tag positions in robot frame...")
+
+    with open("/home/labuser/raf/set_positions/tag_positions_robot.pkl","wb") as file:
+        pickle.dump(P1, file)    
     file.close()
     print("Tag positions saved.")
+
+    # 2) Obtain tag positions in camera /_link frame
+    count = 0
+    while count < 10:
+        rate.sleep()
+        count += 1
+        try:
+            (trans_0, rot_0) = listener.lookupTransform('/_link', '/tag_0', rospy.Time(0))
+            (trans_1, rot_1) = listener.lookupTransform('/_link', '/tag_1', rospy.Time(0))
+            (trans_2, rot_2) = listener.lookupTransform('/_link', '/tag_2', rospy.Time(0))
+            (trans_3, rot_3) = listener.lookupTransform('/_link', '/tag_3', rospy.Time(0))
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+
+    P2 = [trans_0, trans_1, trans_2, trans_3]
+
+    input("\nPress ENTER to save tag positions in camera frame...")
+    with open("/home/labuser/raf/set_positions/tag_positions_camera.pkl","wb") as file:
+        pickle.dump(P2, file)    
+    file.close()
+    print("Tag positions saved.")
+
+    # input("\nPress ENTER to save transformation...")
+    T = run.soder_alt(P2, P1)
+    translation = transform.translation_from_matrix(T)
+    euler = transform.euler_from_matrix(T)
+    quat = transform.quaternion_from_matrix(T)
+
+    print("\n #### Summary ####")
+    print("\nTag Positions in Robot Frame:")
+    print(P1)
+    print("\nTag Positions in Camera Frame:")
+    print(P2)
+    print("\nTransformation Matrix from Robot to Camera Frame:")
+    print(T)
+    print("\nTranslation from Robot to Camera Frame (X, Y, Z):")
+    print(translation)
+    print("\nEuler Rotation from Robot to Camera Frame (Roll, Pitch, Yaw):")
+    print(euler)
+    print("\nQuaternion Rotation from Robot to Camera Frame (x, y, z, w):")
+    print(quat)
 
     return 0
 

@@ -1,12 +1,23 @@
 <launch>
 
     <!-- Launch Stereo camera-->
-    <group ns="camera1">
+    <!-- <group ns="camera1">
         <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
             <arg name="serial_no"             value="035722250421"/>
             <arg name="initial_reset"         value="True"/>
+            <arg name="align_depth"           value="True"/>
+            <arg name="enable_pointcloud"     value="True"/>
         </include>
-    </group>
+
+        <include file="$(find apriltag2_ros)/launch/continuous_detection.launch">
+            <arg name="camera_name" value="/camera1/color" />
+            <arg name="image_topic" default="image_raw" />
+        </include>
+
+        <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+            <remap from="image" to="/camera1/tag_detections_image" />
+        </node>
+    </group> -->
 
     <!-- Launch Lidar camera-->
     <group ns="camera2">
@@ -19,24 +30,34 @@
             <arg name="confidence_height"     value="768"/>
             <arg name="infra_width"           value="1024"/>
             <arg name="infra_height"          value="768"/>
-            <arg name="align_depth"           value="True"/>
             <arg name="initial_reset"         value="True"/>
+            <arg name="align_depth"           value="True"/>
+            <arg name="enable_pointcloud"     value="True"/>
         </include>
+
+        <include file="$(find apriltag2_ros)/launch/continuous_detection.launch">
+            <arg name="camera_name" value="/camera2/color" />
+            <arg name="image_topic" default="image_raw" />
+        </include>
+
+        <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+            <remap from="image" to="/camera2/tag_detections_image" />
+        </node>
     </group>
 
     <!-- Run tag detection -->
-    <include file="$(find apriltag2_ros)/launch/continuous_detection.launch">
-        <arg name="camera_name" value="/camera2/color" />
-        <arg name="image_topic" default="image_raw" />
-    </include>
+    <!-- <node name="tag_detection" pkg="odhe_ros" type="tag_detection.py" output="screen"/> -->
+
+    <!-- View output image with tags-->
+    
 
     <!-- Run arm camera network -->
-    <node name="arm_camera_network" pkg="odhe_ros" type="arm_camera_network_run.py" output="screen"/>
+    <!-- <node name="arm_camera_network" pkg="odhe_ros" type="arm_camera_network_run.py" output="screen"/> -->
 
     <!-- View output image with detected objects and tags-->
-    <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+    <!-- <node name="tag_detections_view" pkg="image_view" type="image_view" respawn="false" output="screen">
         <remap from="image" to="/arm_camera_objects" />
-    </node>
+    </node> -->
 
     <!-- Run DLT -->
     <!-- <node name="dlt" pkg="odhe_ros" type="dlt.py" output="screen"/> -->
