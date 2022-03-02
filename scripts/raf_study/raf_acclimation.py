@@ -916,7 +916,7 @@ def main(run):
     # RAF Parameters
     state = 1               # determines experimental logic
 
-    items_to_select = 8
+    items_to_select = 1
     items_to_acquire =1
     times_to_trigger = 5
     numFoodSets = 1

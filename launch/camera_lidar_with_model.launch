@@ -47,7 +47,7 @@
     <!-- <include file="$(find baxter_moveit_config)/launch/baxter_grippers.launch"/> -->
 
     <!-- By default we do not overwrite the URDF. Change the following to true to change the default behavior -->
-    <arg name="load_robot_description" default="true"/>
+    <arg name="load_robot_description" default="false"/>
 
     <!-- Left and right electric gripper params. Set to true to check for collisions for their links -->
     <arg name="right_electric_gripper" default="false"/>
@@ -83,8 +83,9 @@
 
     <!-- Create static transform between camera and robot -->
     <!-- Run this first to use camera in world frame -->
-    <!-- <node pkg="tf" type="static_transform_publisher" name="robot2camera" args="0.61628417 0.76421964 0.4415309 -0.31922037 0.73312408 0.2296205  0.55488905 /world /_link 100" /> -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="robot2camera" args="0.60740592 0.77209861 0.45919051 -0.3379876 0.72450692 0.23068741 0.55465072 /world /_link 100" /> -->
+
     <!-- Run this second to use camera in gripper frame -->
-    <node pkg="tf" type="static_transform_publisher" name="camera2gripper" args=" -0.11123525 0.00131128 -0.16232666 0.02013883 -0.54148689 0.02336483 0.84014312 /left_gripper /_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="camera2gripper" args=" -0.11112789 0.0024832 -0.16221551 0.02084703 -0.53472294 0.01070475 0.84470242 /left_gripper /_link 100" />
 
 </launch>

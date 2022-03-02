@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+  	<node name="rsdk_gripper_action_server" pkg="baxter_interface" type="gripper_action_server.py" required="true" />
+  	<node name="rsdk_joint_trajectory_action_server" pkg="baxter_interface" type="joint_trajectory_action_server.py" required="true" />
+
+	<!-- <include file="$(find baxter_moveit_config)/launch/baxter_grippers.launch">
+  		<arg name="right_electric_gripper" default="false"/>
+  		<arg name="left_electric_gripper" default="true"/>
+		<arg name="load_robot_description" default="true"/>
+	</include> -->
+
+	<!-- By default we do not overwrite the URDF. Change the following to true to change the default behavior -->
+    <arg name="load_robot_description" default="true"/>
+
+    <!-- Left and right electric gripper params. Set to true to check for collisions for their links -->
+    <arg name="right_electric_gripper" default="false"/>
+    <arg name="left_electric_gripper" default="true"/>
+
+    <!-- Set the kinematic tips for the left_arm and right_arm move_groups -->
+    <arg name="left_tip_name" default="left_gripper"/>
+    <arg name="right_tip_name" default="right_gripper"/>
+    <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+        <arg name="load_robot_description" value="$(arg load_robot_description)"/>
+        <arg name="left_electric_gripper" value="$(arg left_electric_gripper)"/>
+        <arg name="right_electric_gripper" value="$(arg right_electric_gripper)"/>
+        <arg name="left_tip_name" value="$(arg left_tip_name)"/>
+        <arg name="right_tip_name" value="$(arg right_tip_name)"/>
+    </include>
+
+    <include file="$(find baxter_moveit_config)/launch/move_group.launch">
+        <arg name="allow_trajectory_execution" value="true"/>
+    </include>
+
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find moveit_task_constructor_raf)/config/mtc.rviz" required="true"/>
+
+	<!-- Remap appropriate Baxter joint topics -->
+    <node name="remap" pkg="topic_tools" type="relay" args="robot/joint_states joint_states"/>
+
+</launch>

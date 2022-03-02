@@ -66,14 +66,14 @@ def main():
     # print(home_joint_angles)
 
     # Or set your own home position
-    # home_joint_angles = dict()
-    # home_joint_angles['left_e0'] = -0.4126408319411763
-    # home_joint_angles['left_e1'] = 1.6766410011587571
-    # home_joint_angles['left_s0'] = 0.3056456719861687
-    # home_joint_angles['left_s1'] = -1.358339987672534
-    # home_joint_angles['left_w0'] = 0.18331070415230694
-    # home_joint_angles['left_w1'] = 0.5495486172599495
-    # home_joint_angles['left_w2'] = -0.30833013836496814
+    home_joint_angles = dict()
+    home_joint_angles['left_e0'] = -0.4126408319411763
+    home_joint_angles['left_e1'] = 1.6766410011587571
+    home_joint_angles['left_s0'] = 0.3056456719861687
+    home_joint_angles['left_s1'] = -1.358339987672534
+    home_joint_angles['left_w0'] = 0.18331070415230694
+    home_joint_angles['left_w1'] = 0.5495486172599495
+    home_joint_angles['left_w2'] = -0.30833013836496814
 
     run.move_to_angles(home_joint_angles)
 
