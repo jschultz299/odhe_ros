@@ -925,7 +925,7 @@ def main(run):
     state = 1               # determines experimental logic
 
     items_to_select = 10
-    items_to_acquire = 3
+    items_to_acquire = 1
     times_to_trigger = 5
     numFoodSets = 1
 
