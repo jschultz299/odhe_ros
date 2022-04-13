@@ -1,16 +1,16 @@
-# Robot-Assisted Feeding
-ODHE ROS PACKAGE
+# Robot-Assisted Feeding - ODHE ROS Package
 
 This is the ros package for the ODHE Grant Funded Project
 Robot-Assisted Feeding (RAF) for Individuals with Spinal Cord Injury
 
-This ros workspace has been used to develop the whole  project,
+This ros workspace has been used to develop the whole project,
 so different iterations of the project require different program files.
 
+## Head-Mounted System
 The first iteration of the project used the iSCAN etl-600 wearable
 eye tracker. We used a faster-RCNN object detection network to detect cups, 
 bowls, plates, forks, and spoons. The network used the iSCAN's head-mounted 
-camera as the input. To demo the system,  we placed a cup in
+camera as the input. To demo the system, we placed a cup in
 the scene. The user then directs their gaze to the cup. When they are 
 ready, the user issues a voice command such as "grab the cup". Baxter then 
 picks up the cup that the user was looking at and delivers it to in front 
@@ -49,7 +49,8 @@ Records the iSCAN information and robot data.
 serial_read.py  
 ```
 Reads the serial data from the iSCAN.
-    
+
+## Tablet Interface System
 The second iteration of this project got rid of the head-mounted eye 
 tracker. Also, we decided to interact with different food items on a 
 plate, instead of dishes and utensils. For the interface, we used a 
@@ -76,14 +77,27 @@ Baxter approaches the user's face and releases the food item.
 Below are the files associated with this project iteration.
 
 Launch File:
-    raf.launch                      Top-level launch file for the project.
-        camera_multiple.launch      Launches both the LIDAR and STEREO 
-                                    depth cameras. Requires serial numbers.
-        tag_detection.py            Detects the AprilTag Fiducial markers 
-                                    and draws the tag coordinate frame.
-        arm_camera_network_run.py   Detects food items on the plate. 
-        dlt.py                      Defines the plane of the table and 
-                                    publishes DLT parameters.
+```bash
+raf_study.launch
+    - camera_multiple.launch
+    - tag_detection.py
+    - arm_camera_network.py
+    - dlt.py
+```
+raf.launch                      
+Top-level launch file for the project.
+
+camera_multiple.launch      
+Launches both the LIDAR and STEREO depth cameras. Requires serial numbers.
+
+tag_detection.py            
+Detects the AprilTag Fiducial markers and draws the tag coordinate frame.
+
+arm_camera_network_run.py   
+Detects food items on the plate. 
+
+dlt.py                     
+Defines the plane of the table and publishes DLT parameters.
 
 Scripts:
     calibrate_camera.py             Runs the logic for performing the 
