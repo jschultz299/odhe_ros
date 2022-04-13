@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# This program is used to acclimate participants to the study
+# This program is the main file for data collection 
 # Written by Jack Schultz
 # Contributed to by Jinlong Li
 # Created 7/20/21
@@ -9,6 +9,7 @@
 Robot-Assisted Feeding for Individuals with Spinal Cord Injury
 """
 
+### Imports ###
 import struct
 import sys
 import math
@@ -16,9 +17,6 @@ from xmlrpc.client import Boolean
 import cv2
 import random
 
-from cv2 import data
-from baxter_core_msgs import msg
-from genpy import message
 import rospy
 import numpy as np
 import baxter_interface
@@ -28,12 +26,13 @@ import threading
 import signal
 import os
 
+from operator import attrgetter
 from statistics import mean
 from datetime import datetime
 from matplotlib import path
 from odhe_ros.msg import Result, DltParams
 from cv_bridge import CvBridge
-from Xlib import X, display
+from Xlib import display
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import (
     PoseStamped,
@@ -45,6 +44,20 @@ from baxter_core_msgs.srv import (
     SolvePositionIKRequest,
 )
 
+### Class Defenition Example ###
+# class Detection:
+#     def __init__(self, id, name, score, box, mask, x, y):
+#         self.id = id
+#         self.name = name
+#         self.score = score
+#         self.box = box
+#         self.mask = mask
+#         self.x = x
+#         self.y = y
+#     def __repr__(self):
+#         return repr([self.id, self.name, self.score, self.box, self.mask, self.x, self.y])
+
+### E-Stop Thread ###
 class ExitCommand(Exception):
     pass
 
@@ -54,11 +67,14 @@ def signal_handler(signal, frame):
 def thread_job(run):
     # Trigger the kill signal
     estop_pressed = False
+    myfile = open("/home/labuser/raf/participant_data/cursor_data.txt", 'w')
     while not estop_pressed:
-        estop_pressed = RAF_dataCollection.estop(run)
+        estop_pressed = RAF_dataCollection.estop(run, myfile)
 
+    myfile.close()
     os.kill(os.getpid(), signal.SIGUSR1)
 
+### Main Class Definition ###
 class RAF_dataCollection():
     def __init__(self, limb, verbose=True):
         # Parameters
@@ -81,7 +97,6 @@ class RAF_dataCollection():
         self.mouth_open = False
         self.food_set = 0
         self.food_num = 0
-        self.raf_info_str = ""
 
         self._limb_name = limb
         self._verbose = False
@@ -118,15 +133,18 @@ class RAF_dataCollection():
         self.pub_msg = rospy.Publisher('raf_message', String, queue_size=10)
         self.pub_cursor = rospy.Publisher('raf_cursor_angle', String, queue_size=10)
 
-    # Subscriber Callbacks
+    ### Subscriber Callbacks ###
     def image_callback(self, msg):
-        self.image_msg = msg
-        self.image = self.convert_to_cv_image(self.image_msg)
+        self.image = self.convert_to_cv_image(msg)
+        self._header = msg.header
 
         output = self.image.copy()
 
         # Draw Current State in the corner of the image
-        output = cv2.putText(output, self.raf_info_str, (20, 470), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
+        info_str1 = "Set: " + str(self.food_set)
+        info_str2 = "Item: " + str(self.food_num)
+        output = cv2.putText(output, info_str1, (20, 450), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
+        output = cv2.putText(output, info_str2, (20, 470), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
 
         im_rgb = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
         self.image_msg = self.bridge.cv2_to_imgmsg(im_rgb, encoding="rgb8")
@@ -143,7 +161,10 @@ class RAF_dataCollection():
         output = self.face_image.copy()
 
         # Draw Current State in the corner of the image
-        output = cv2.putText(output, self.raf_info_str, (20, 470), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
+        info_str1 = "Set: " + str(self.food_set)
+        info_str2 = "Item: " + str(self.food_num)
+        output = cv2.putText(output, info_str1, (20, 450), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
+        output = cv2.putText(output, info_str2, (20, 470), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
 
         im_rgb = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
         self.face_msg = self.bridge.cv2_to_imgmsg(im_rgb, encoding="rgb8")
@@ -157,10 +178,20 @@ class RAF_dataCollection():
     
     def detections_callback(self, msg):
         # Receive detections and sort them according to y-offset
+
+        # temp = self.multisort(msg)
         temp = self.sort_detections(msg)
         
         # Reorganize back into Result() object type
         # TODO: Change the rest of the code to use the above organization (by object). It works well for now, it just might speed it up.
+        # self.detections = Result()
+        # for i in range(len(temp)):
+        #     self.detections.class_ids.append(temp[i].id)
+        #     self.detections.class_names.append(temp[i].name)
+        #     self.detections.scores.append(temp[i].score)
+        #     self.detections.boxes.append(temp[i].box)
+        #     self.detections.masks.append(temp[i].mask)
+
         self.detections = Result()
         for i in range(len(temp)):
             self.detections.class_ids.append(temp[i][0])
@@ -225,7 +256,7 @@ class RAF_dataCollection():
         result = self.detections
         return result
 
-    # Main Functions
+    ### Main Functions ###
     def sort_detections(self, msg):
         # Sort detections by y-position of upper left bbox corner
         # TODO: Sort by y-position first and then sort again by x-position
@@ -279,13 +310,18 @@ class RAF_dataCollection():
             self.Sort_quick(target, low, pi-1) 
             self.Sort_quick(target, pi+1, high)
 
-    def estop(self):
+    def estop(self, file):
         estop_pressed = False
 
         data = display.Display().screen().root.query_pointer()._data
         # p = path.Path([(120,805), (234,805), (306, 878), (306,991), (234,1064), (121,1064), (48,991), (48,878)])      # Define Octogon (left side big)
         p = path.Path([(1737,865), (1824,865), (1880,920), (1880,1008), (1824,1064), (1737,1064), (1680,1008), (1680,920)])      # Define Octogon (right side small)
         contains = p.contains_points([(data["root_x"], data["root_y"])])
+        cur_time = rospy.get_time()
+        line = str(cur_time) + "," + str(data["root_x"]) + "," + str(data["root_y"])
+        file.write(line + "\n")
+
+        # Write cursor positions to file
 
         # Check if cursor is inside the stop sign
         if contains:
@@ -458,7 +494,10 @@ class RAF_dataCollection():
                     output = cv2.putText(output, str(i+1), (ul_x + 2, br_y - 3), cv2.FONT_HERSHEY_SIMPLEX, .3, (0,255,255), 1, cv2.LINE_AA)
 
                     # Draw Current State in the corner of the image
-                    output = cv2.putText(output, self.raf_info_str, (20, 470), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
+                    info_str1 = "Set: " + str(self.food_set)
+                    info_str2 = "Item: " + str(self.food_num)
+                    output = cv2.putText(output, info_str1, (20, 450), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
+                    output = cv2.putText(output, info_str2, (20, 470), cv2.FONT_HERSHEY_DUPLEX, .5, (0,255,255), 1)
 
                 im_rgb = cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
                 self.im_msg = self.bridge.cv2_to_imgmsg(im_rgb, encoding="rgb8")
@@ -703,8 +742,8 @@ class RAF_dataCollection():
 
                 if height > width:
                     # Angle measured from horizontal axis (x-axis), counter-clockwise to line connecting box vertices 0 and 1
-                    interest_point_x = int((box[3][0] + box[2][0]) / 2)
-                    interest_point_y = int((box[3][1] + box[2][1]) / 2)
+                    interest_point_x = int((box[0][0] + box[1][0]) / 2)
+                    interest_point_y = int((box[0][1] + box[1][1]) / 2)
                 else:
                     interest_point_x = int((box[3][0] + box[0][0]) / 2)
                     interest_point_y = int((box[3][1] + box[0][1]) / 2)
@@ -758,7 +797,7 @@ class RAF_dataCollection():
             else:
                 success = None
 
-        rospy.sleep(1.0)
+        rospy.sleep(0.5)
         self.image_flag = 0
         
         return success
@@ -814,7 +853,7 @@ class RAF_dataCollection():
         # self.pub_cursor.publish(str(self.cursor_angle))
         self.loop_rate.sleep()
 
-    # Robot Functions
+    ### Robot Functions ###
     def move_to_angles(self, start_angles=None):
         # print("Moving the {0} arm to start pose...".format(self._limb_name))
         if not start_angles:
@@ -910,38 +949,22 @@ def main(run):
     6) Food Item Delivery
     7) Food Item Transfer
     8) Return to Home
-
-    This program runs in stages of increasing complexity to acclimate the participant to 
-    The study. First, the user will only select items. Second, the user will select items, 
-    the robot will pick them up, and then set them back down again. Third, the user will 
-    practice opening their mouth and triggering the robot to transfer. Finally, the user 
-    will practice the whole data collection procedure.
     """
-
-    # TODO List:
-    #       1) 
 
     # RAF Parameters
     state = 1               # determines experimental logic
+    sets_till_break = 5     # Number of food item sets until participant can take a break
 
-    items_to_select = 10
-    items_to_acquire = 3
-    times_to_trigger = 5
-    numFoodSets = 1
+    num_sets = 10   # Number of trials to run. Each trial should have 6 food items.
+                   # About 18 trials (108) food items should take an hour (non-stop)
+    food_items_per_set = 6
+    num_food_items = num_sets * food_items_per_set
 
     # Set debug to True to move robot to starting joint angles and then just spin
     debug = False
 
     bridge = CvBridge()
     limb = 'left'
-
-    # Comment this out when e-stop is enabled
-    # run = RAF_dataCollection(limb)
-
-    # Read table height set in Calibration.py
-    with open('/home/labuser/raf/set_positions/table_height.pkl', 'rb') as handle:
-        table_height = pickle.load(handle)
-    handle.close()
 
     # Read home position set in Calibration.py
     with open('/home/labuser/raf/set_positions/home_position.pkl', 'rb') as handle:
@@ -950,140 +973,102 @@ def main(run):
 
     wrist_orientation = home_joint_angles['left_w2']
 
+    # Initialize Class
+    # run = RAF_dataCollection(limb)
+
     # Move to home position
     run.move_to_angles(home_joint_angles)
 
-    if debug:
+    # Move to starting location
+    run.move_to_angles(home_joint_angles)
+    run.gripper_open()
 
-        while not rospy.is_shutdown():
-            rospy.loginfo_once("Running in debug mode. Press ctrl+C to quit.")
-            detections = run.get_detections()
-            grasped_item_class = run.check_grasp(detections)
-            print(grasped_item_class)
-            # run.publish()
+    print("\n")
+    participantID = input("Enter Participant ID (e.g. '04'): ")
+    print("Participant ID: ", participantID)
 
-    else:
-        # 1) Calibrate.py should have already been run
-        # 2) Initialize facial keypoint detection. Set the mouth detection joint angles.
+    now = datetime.now()
+    dt_string = now.strftime("%m/%d/%Y at %H:%M:%S")
+    print("Data collected on", dt_string)
+    print("\n")
 
-        res = input("Save New Positions? (y/n): ")
+    file_name = "participant_" + str(participantID) + ".txt"
+    path_to_file = "/home/labuser/raf/participant_data/" + file_name
+    data_file = open(path_to_file, "w")
+    data_file.write("Participant ID: " + participantID + "\n")
+    data_file.write("Data collected on " + dt_string + "\n")
+    data_file.close()
 
-        with open('/home/labuser/raf/set_positions/release_position.pkl', 'rb') as handle:
-            release_joint_angles = pickle.load(handle)
-        handle.close()
+    data_collection_start_time = rospy.get_time()
 
-        # Comment out to skip saving the release joint angles
-        # run.move_to_angles(release_joint_angles)
-
-        # input("\nPress ENTER to save Release Food Item Position.")
-        # release_joint_angles = run.get_current_joint_angles()
-
-        # f = open("/home/labuser/raf/set_positions/release_position.pkl","wb")
-        # pickle.dump(release_joint_angles,f)
-        # f.close()
-
-        with open('/home/labuser/raf/set_positions/mouth_position.pkl', 'rb') as handle:
-            mouth_joint_angles = pickle.load(handle)
-        handle.close()
-
-        if res == "y":
-            # Comment out to skip saving the mouth position
-            run.move_to_angles(mouth_joint_angles)
-
-            input("\nPress ENTER to save Mouth Detection Position.")
-            mouth_joint_angles = run.get_current_joint_angles()
-
-            f = open("/home/labuser/raf/set_positions/mouth_position.pkl","wb")
-            pickle.dump(mouth_joint_angles,f)
-            f.close()
-
-        # 3) Set food item pre-transfer position
-
-        with open('/home/labuser/raf/set_positions/pre_transfer_position.pkl', 'rb') as handle:
-            pre_transfer_joint_angles = pickle.load(handle)
-        handle.close()
-
-        if res == "y":
-            # Comment out to skip saving the transfer position
-            run.move_to_angles(pre_transfer_joint_angles)
-
-            input("\nPress ENTER to save Food Pre-Transfer Position.")
-            pre_transfer_joint_angles = run.get_current_joint_angles()
-
-            f = open("/home/labuser/raf/set_positions/pre_transfer_position.pkl","wb")
-            pickle.dump(pre_transfer_joint_angles,f)
-            f.close()
-
-        # 4) Set food item transfer position
-
-        with open('/home/labuser/raf/set_positions/transfer_position.pkl', 'rb') as handle:
-            transfer_joint_angles = pickle.load(handle)
-        handle.close()
-
-        if res == "y":
-            # Comment out to skip saving the transfer position
-            run.move_to_angles(transfer_joint_angles)
-
-            input("\nPress ENTER to save Food Transfer Position.")
-            transfer_joint_angles = run.get_current_joint_angles()
-
-            f = open("/home/labuser/raf/set_positions/transfer_position.pkl","wb")
-            pickle.dump(transfer_joint_angles,f)
-            f.close()
-
-        # Move to starting location
-        run.move_to_angles(home_joint_angles)
-        run.gripper_open()
-
-        # Phase 1: Selection Only
-        raf_msg = "Phase I - Selection Only."
+    for ii in range(num_sets):
+        run.food_set = ii+1
+        raf_msg = "Wait for researcher to arrange food items and begin selection."
         run.change_raf_message(raf_msg)
         run.publish()
-        rospy.sleep(3.0)
 
-        count = 0
-        while state == 1:
+        numFoodItems = None
+        # numFoodItems = food_items_per_set
+        while numFoodItems != food_items_per_set:
+            input("Press ENTER when " + str(food_items_per_set) + " food items have been arranged on the plate.")
+
             detections = run.get_detections()
             item_ids = list(detections.class_ids)
             idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
             numFoodItems = len(idx)
 
-            run.raf_info_str = "Items to Select: " + str(items_to_select - count)
+        print("\n")
+        print("########################################")
+        print("########### Begin Food Set " + str(ii+1) + " ###########")
+        print("########################################")
 
-            if numFoodItems is not None:
-                count = count + 1
-                item_to_select = random.randrange(0, numFoodItems)
-                item_to_select_cls = detections.class_names[item_to_select]  
+        food_set_start_time = rospy.get_time()
+
+        for i in range(numFoodItems):
+            # Selection
+            if state == 1:
+                if i > 0:
+                    raf_msg = "Wait for researcher to arrange food items and begin selection."
+                    run.change_raf_message(raf_msg)
+                    run.publish()
+
+                    intended_num_food_items = numFoodItems-i
+                    current_numFoodItems = None
+                    while current_numFoodItems != intended_num_food_items:
+                        input("Press ENTER when " + str(intended_num_food_items) + " food items have been arranged on the plate.")
+
+                        detections = run.get_detections()
+                        item_ids = list(detections.class_ids)
+                        idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
+                        current_numFoodItems = len(idx)
+
+                print("\n----- Food Set " + str(ii+1) + ", Food Item " + str(i+1) + " ----- \n")
+                run.food_num = i+1
+                food_item_start_time = rospy.get_time()
+                overall_attempts_list.append(True)
+
+                print("Selection:")
+
+                # Randomly choose one of the detected items for the participant to select
+                detections = run.get_detections()
+                item_ids = list(detections.class_ids)
+                idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
+                numCurrentFoodItems = len(idx)
+                item_to_select = random.randrange(0, numCurrentFoodItems)
+                item_to_select_cls = detections.class_names[item_to_select]
+                
+
+                # Wait for participant to select item
                 selected_item, selected_item_cls = run.item_selection(item_to_select, item_to_select_cls)
-            else:
-                pass
 
-            if count >= items_to_select:
-                run.raf_info_str = "Items to Select: " + str(items_to_select - count)
                 state = 2
 
-            run.loop_rate.sleep()
+            rospy.sleep(0.1)
 
-        # Phase 2: Selection and robot picks up food item
-        raf_msg = "Phase II - Selection and Acquisition."
-        run.change_raf_message(raf_msg)
-        run.publish()
-        rospy.sleep(3.0)
+            # Acquisition
+            if state == 2:
 
-        count = 0
-        while state == 2:
-            detections = run.get_detections()
-            item_ids = list(detections.class_ids)
-            idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
-            numFoodItems = len(idx)
-
-            run.raf_info_str = "Items to Acquire: " + str(items_to_acquire - count)
-
-            if numFoodItems is not None:
-                count = count + 1
-                item_to_select = random.randrange(0, numFoodItems)
-                item_to_select_cls = detections.class_names[item_to_select]  
-                selected_item, selected_item_cls = run.item_selection(item_to_select, item_to_select_cls)
+                print("Acquisition:")
 
                 # Compute pose in robot frame of selected item
                 det = run.get_detections()
@@ -1098,139 +1083,104 @@ def main(run):
                 joint_angles['left_w2'] = math.radians(math.degrees(joint_angles['left_w2']) - (gripper_angle - 90))
                 run.acquire_item(joint_angles, point_robot, selected_item_cls, table_height)
 
-                current_pose = run.get_current_pose()
+                acquisition_end_time = rospy.get_time()
+                
+                grasped, acquired_item = run.check_grasp()
 
-                pose = Pose()
-                pose.position.x = current_pose['position'][0]
-                pose.position.y = current_pose['position'][1]
-                pose.position.z = current_pose['position'][2] - .075
-                pose.orientation = current_pose['orientation']
+            # Delivery
+            if state == 3:
 
-                run._servo_to_pose(pose)
-                run.gripper_open()
+                print("Delivery:")
+
+                run.deliver_item(mouth_joint_angles)
+
+                delivery_end_time = rospy.get_time()
+
+                grasped, delivered_item = run.check_grasp()
+
+            # Trigger Food Item Transfer
+            if state == 4:
+                print("Trigger:")
+
+                trigger = run.trigger_transfer()
+
+                trigger_end_time = rospy.get_time()
+
+                grasped, triggered_item = run.check_grasp()
+
+            # Transfer
+            if state == 5:
+                print("Transfer:")
+
+                run.transfer_item(pre_transfer_joint_angles, transfer_joint_angles)
+
+                transfer_end_time = rospy.get_time()
+
+                run.retract()
+
+                grasped, transfered_item = run.check_grasp()
+
+                state = 6
+            
+            # Return home
+            if state == 6:
 
                 home_joint_angles['left_w2'] = wrist_orientation
                 run.move_to_angles(home_joint_angles)
 
-            else:
-                pass
+                run.gripper_open()
 
-            if count >= items_to_acquire:
-                run.raf_info_str = "Items to Acquire: " + str(items_to_acquire - count)
-                state = 3
+                food_item_end_time = rospy.get_time()
 
-            run.loop_rate.sleep()
+                food_item_time = food_item_end_time - food_item_start_time
 
-        # Phase 3: Mouth detection
-        raf_msg = "Phase III - Mouth Detection."
-        run.change_raf_message(raf_msg)
-        run.publish()
-        rospy.sleep(3.0)
+                state = 1
 
-        run.move_to_angles(mouth_joint_angles)
-        count = 0
-        while state == 3:
-            run.raf_info_str = "Times to trigger: " + str(times_to_trigger- count)
-            trigger = run.trigger_transfer()
+        # Check to see if all food items have been delivered
+        detections = run.get_detections()
+        item_ids = list(detections.class_ids)
+        idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
+        numFoodItems = len(idx)
 
-            if trigger:
-                count = count + 1
-            else:
-                pass
+        if numFoodItems == 0:
+            raf_msg = "All food items delivered."
+            run.change_raf_message(raf_msg)
+            run.publish()
+        else:
+            raf_msg = "Not all food items delivered."
+            run.change_raf_message(raf_msg)
+            run.publish()
+            print("Not all food items delivered.")
 
-            if count >= times_to_trigger:
-                run.raf_info_str = "Times to trigger: " + str(times_to_trigger- count)
-                state = 4
+        food_set_end_time = rospy.get_time()
 
-            run.loop_rate.sleep()
+        food_set_time = food_set_end_time - food_set_start_time
+        food_set_time_list.append(food_set_time)
+        print("\nFood Set " + str(ii+1) + " Time Elapsed: " + str(food_set_time))
+        print("########################################")
+        print("\n")
 
-        # Phase 4: Everything combined
-        raf_msg = "Phase IV - Eating Food Items."
-        run.change_raf_message(raf_msg)
-        run.publish()
-        rospy.sleep(3.0)
+        if (ii+1 % sets_till_break) == 0 and ii+1 != num_sets:
+            break_num = int(ii+1 / sets_till_break)
+            raf_msg = "Time for a Break. Notify researcher when ready to continue."
+            run.change_raf_message(raf_msg)
+            run.publish()
 
-        run.move_to_angles(home_joint_angles)
-        count = 0
-        while state == 4:
-            for ii in range(numFoodSets):
+            break_start_time = rospy.get_time()
+            input("Time for break " + str(break_num) + ". Press ENTER when ready to continue.\n")
+            break_end_time = rospy.get_time()
+            break_time = break_end_time - break_start_time
+            break_time_list.append(break_time)
+            print("Break " + str(break_num) + " Time Elapsed: " + str(break_time))
 
-                raf_msg = "Wait for researcher to arrange food items."
-                run.change_raf_message(raf_msg)
-                run.publish()
+    data_collection_end_time = rospy.get_time()
+    data_collection_time = data_collection_end_time - data_collection_start_time
+    print("Data Collection Complete.")
+    print("Data Collection Elapsed Time: ", data_collection_time)
 
-                numFoodItems = None
-                while numFoodItems != 6:
-                    input("Press ENTER when " + str(6) + " food items have been arranged on the plate.")
-
-                    detections = run.get_detections()
-                    item_ids = list(detections.class_ids)
-                    idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
-                    numFoodItems = len(idx)
-
-                for i in range(numFoodItems):
-                    run.raf_info_str = "Food Items to Eat: " + str((numFoodSets * 6) - count)
-
-                    count = count + 1
-
-                    # Selection
-
-                    # Randomly choose one of the detected items for the participant to select
-                    detections = run.get_detections()
-                    item_ids = list(detections.class_ids)
-                    idx = [i for i, e in enumerate(item_ids) if e > 0 and e < 4 ]
-                    numCurrentFoodItems = len(idx)
-                    item_to_select = random.randrange(0, numCurrentFoodItems)
-                    item_to_select_cls = detections.class_names[item_to_select]
-                        
-
-                    # Wait for participant to select item
-                    selected_item, selected_item_cls = run.item_selection(item_to_select, item_to_select_cls)
-
-                    rospy.sleep(0.1)
-
-                    # Acquisition
-
-                    # Compute pose in robot frame of selected item
-                    det = run.get_detections()
-
-                    point_robot, gripper_angle = run.acquire_item_pose(selected_item, selected_item_cls, det)
-
-                    rospy.sleep(0.1)
-
-                    # Pick up the selected food item
-                    joint_angles = home_joint_angles
-                    joint_angles['left_w2'] = math.radians(math.degrees(joint_angles['left_w2']) - (gripper_angle - 90))
-                    run.acquire_item(joint_angles, point_robot, selected_item_cls, table_height)
-
-                    # Delivery
-
-                    run.deliver_item(mouth_joint_angles)
-
-                    # Trigger Food Item Transfer
-
-                    trigger = run.trigger_transfer()
-
-                    # Transfer
-
-                    run.transfer_item(pre_transfer_joint_angles, transfer_joint_angles)
-
-                    run.retract()
-                    
-                    # Return home
-
-                    home_joint_angles['left_w2'] = wrist_orientation
-                    run.move_to_angles(home_joint_angles)
-
-                    run.gripper_open()
-
-                    if count >= numFoodSets * 6:
-                        run.raf_info_str = "Food Items to Eat: " + str((numFoodSets * 6) - count)
-                        state = 0
-
-        raf_msg = "Program Finished."
-        run.change_raf_message(raf_msg)
-        run.publish()
+    raf_msg = "Data Collection Finished. Thank you for your participation!"
+    run.change_raf_message(raf_msg)
+    run.publish()
 
     return 0
 

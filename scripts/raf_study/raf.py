@@ -43,17 +43,17 @@ from baxter_core_msgs.srv import (
     SolvePositionIKRequest,
 )
 
-class Detection:
-    def __init__(self, id, name, score, box, mask, x, y):
-        self.id = id
-        self.name = name
-        self.score = score
-        self.box = box
-        self.mask = mask
-        self.x = x
-        self.y = y
-    def __repr__(self):
-        return repr([self.id, self.name, self.score, self.box, self.mask, self.x, self.y])
+# class Detection:
+#     def __init__(self, id, name, score, box, mask, x, y):
+#         self.id = id
+#         self.name = name
+#         self.score = score
+#         self.box = box
+#         self.mask = mask
+#         self.x = x
+#         self.y = y
+#     def __repr__(self):
+#         return repr([self.id, self.name, self.score, self.box, self.mask, self.x, self.y])
 
 class ExitCommand(Exception):
     pass
@@ -175,17 +175,26 @@ class RAF_dataCollection():
     def detections_callback(self, msg):
         # Receive detections and sort them according to y-offset
 
-        temp = self.multisort(msg)
+        # temp = self.multisort(msg)
+        temp = self.sort_detections(msg)
         
         # Reorganize back into Result() object type
         # TODO: Change the rest of the code to use the above organization (by object). It works well for now, it just might speed it up.
+        # self.detections = Result()
+        # for i in range(len(temp)):
+        #     self.detections.class_ids.append(temp[i].id)
+        #     self.detections.class_names.append(temp[i].name)
+        #     self.detections.scores.append(temp[i].score)
+        #     self.detections.boxes.append(temp[i].box)
+        #     self.detections.masks.append(temp[i].mask)
+
         self.detections = Result()
         for i in range(len(temp)):
-            self.detections.class_ids.append(temp[i].id)
-            self.detections.class_names.append(temp[i].name)
-            self.detections.scores.append(temp[i].score)
-            self.detections.boxes.append(temp[i].box)
-            self.detections.masks.append(temp[i].mask)
+            self.detections.class_ids.append(temp[i][0])
+            self.detections.class_names.append(temp[i][1])
+            self.detections.scores.append(temp[i][2])
+            self.detections.boxes.append(temp[i][3])
+            self.detections.masks.append(temp[i][4])
 
         # TODO: Instead of sorting, we will use a deep sort machine learning method to track specific food items
         # Sort detections based on box position in image
@@ -244,15 +253,68 @@ class RAF_dataCollection():
         return result
 
     # Main Functions
-    def multisort(self, msg):
-        detections = list()
-        for i in range(len(msg.class_ids)):
-            detections.append(Detection(msg.class_ids[i], msg.class_names[i], msg.scores[i], msg.boxes[i], msg.masks[i], msg.boxes[i].x_offset, msg.boxes[i].y_offset))
+    # def multisort(self, msg):
+    #     detections = list()
+    #     for i in range(len(msg.class_ids)):
+    #         detections.append(Detection(msg.class_ids[i], msg.class_names[i], msg.scores[i], msg.boxes[i], msg.masks[i], msg.boxes[i].x_offset, msg.boxes[i].y_offset))
 
-        # sort by y, then by x
-        result = sorted(detections, key=attrgetter('x', 'y'))
+    #     # sort by y, then by x
+    #     result = sorted(detections, key=attrgetter('x', 'y'))
 
-        return result
+    #     return result
+
+    def sort_detections(self, msg):
+        # Sort detections by y-position of upper left bbox corner
+        # TODO: Sort by y-position first and then sort again by x-position
+        # This will prevent object ids from flipping back and forth if they are at the same y-position
+
+        target = self.Out_transfer(msg.class_ids, msg.class_names, msg.scores, msg.boxes, msg.masks)
+
+        # Sort by y-offset
+        self.Sort_quick(target, 0, len(target)-1)
+
+        # Sort by x-offset
+        # self.Sort_quick(target, 0, len(target)-1)
+
+        return target
+
+    def Out_transfer(self, class_id, class_name, score, box, mask):
+
+        num = int(len(class_id))
+        target = []
+
+        for i in range(num):
+
+            target.append([class_id[i], class_name[i], score[i], box[i], mask[i]])
+
+        return target
+
+    def partition(self, target, low, high):
+
+        i = ( low-1 )
+        arr = []
+        arr = [target[w][3].y_offset for w in range(len(target))]
+
+        pivot = arr[high]
+
+        for j in range(low , high): 
+    
+            if   arr[j] <= pivot: 
+            
+                i = i+1 
+                target[i],target[j] = target[j],target[i] 
+    
+        target[i+1],target[high] = target[high],target[i+1] 
+
+        return ( i+1 )
+
+    def Sort_quick(self, target, low, high):
+
+        if low < high: 
+            pi = self.partition(target, low, high) 
+    
+            self.Sort_quick(target, low, pi-1) 
+            self.Sort_quick(target, pi+1, high)
 
     def estop(self, file):
         estop_pressed = False
@@ -483,19 +545,27 @@ class RAF_dataCollection():
         # else:
         #     angle = -angle
 
+        # if height > width:
+        #     # Angle measured from horizontal axis (x-axis), counter-clockwise to line connecting box vertices 0 and 1
+        #     gripper_angle = abs(angle - 180)
+        #     mid = (int((box[3][0] + box[2][0]) / 2), int((box[3][1] + box[2][1]) / 2))
+        # else:
+        #     gripper_angle = abs(angle - 90)
+        #     mid = (int((box[3][0] + box[0][0]) / 2), int((box[3][1] + box[0][1]) / 2))
+
+        # # Create a deadzone that defaults to a grip angle of 0 degrees
+        # if (gripper_angle > 0 and gripper_angle <= 3):
+        #     gripper_angle = 0
+        # elif (gripper_angle > 177 and gripper_angle <= 180):
+        #     gripper_angle = 0
+
         if height > width:
             # Angle measured from horizontal axis (x-axis), counter-clockwise to line connecting box vertices 0 and 1
-            gripper_angle = abs(angle - 180)
-            mid = (int((box[3][0] + box[2][0]) / 2), int((box[3][1] + box[2][1]) / 2))
+            gripper_angle = abs(angle)
+            mid = (int((box[0][0] + box[1][0]) / 2), int((box[0][1] + box[1][1]) / 2))
         else:
-            gripper_angle = abs(angle - 90)
+            gripper_angle = abs(angle) + 90
             mid = (int((box[3][0] + box[0][0]) / 2), int((box[3][1] + box[0][1]) / 2))
-
-        # Create a deadzone that defaults to a grip angle of 0 degrees
-        if (gripper_angle > 0 and gripper_angle <= 3):
-            gripper_angle = 0
-        elif (gripper_angle > 177 and gripper_angle <= 180):
-            gripper_angle = 0
 
         centroid = (int((box[0][0] + box[2][0]) / 2), int((box[0][1] + box[2][1]) / 2))
         grasp_point = (int((centroid[0] + mid[0]) / 2), int((centroid[1] + mid[1]) / 2))
@@ -678,8 +748,8 @@ class RAF_dataCollection():
 
                 if height > width:
                     # Angle measured from horizontal axis (x-axis), counter-clockwise to line connecting box vertices 0 and 1
-                    interest_point_x = int((box[3][0] + box[2][0]) / 2)
-                    interest_point_y = int((box[3][1] + box[2][1]) / 2)
+                    interest_point_x = int((box[0][0] + box[1][0]) / 2)
+                    interest_point_y = int((box[0][1] + box[1][1]) / 2)
                 else:
                     interest_point_x = int((box[3][0] + box[0][0]) / 2)
                     interest_point_y = int((box[3][1] + box[0][1]) / 2)
@@ -1127,8 +1197,8 @@ def main(run):
             run.change_raf_message(raf_msg)
             run.publish()
 
-            # numFoodItems = None
-            numFoodItems = food_items_per_set
+            numFoodItems = None
+            # numFoodItems = food_items_per_set
             while numFoodItems != food_items_per_set:
                 input("Press ENTER when " + str(food_items_per_set) + " food items have been arranged on the plate.")
 

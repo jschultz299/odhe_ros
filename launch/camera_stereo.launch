@@ -15,11 +15,12 @@
     <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
 
     <!--Use this section to visualize the Depth Camera Image Stream-->
-    <!--
+    
     <node name="view_rgb_image1" pkg="image_view" type="image_view" respawn="false" output="screen">
-        <remap from="image" to="/camera1/color/image_raw" />
+        <remap from="image" to="/camera/color/image_raw" />
     </node>
 
+    <!--
     <node name="view_rgb_image2" pkg="image_view" type="image_view" respawn="false" output="screen">
         <remap from="image" to="/camera2/color/image_raw" />
     </node>

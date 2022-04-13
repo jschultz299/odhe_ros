@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-# This program sends Baxter to home position
+# This program sends Baxter to specified position
 # Written by Jack Schultz
 # Created 1/11/22
 
-import numpy as np
 import rospy
 import baxter_interface
 import sys
 import pickle
+import sys, getopt
 
 class control_baxter():
     def __init__(self, limb, verbose=True):
@@ -50,34 +50,62 @@ class control_baxter():
         else:
             rospy.logerr("No Joint Angles provided for move_to_joint_positions. Staying put.")
 
-def main():
+def main(argv):
 
     rospy.init_node("send_baxter_home")
     limb = 'left'
 
     run = control_baxter(limb)
 
-    # Read home position set in Calibration.py
-    with open('/home/labuser/raf/set_positions/home_position.pkl', 'rb') as handle:
-        home_joint_angles = pickle.load(handle)
-    handle.close()
+    target = ''
 
-    # print(type(home_joint_angles))
-    # print(home_joint_angles)
+    try:
+        opts, args = getopt.getopt(argv,"ht:",["target=",])
+    except getopt.GetoptError:
+        print('Usage: send_to.py -t <target>')
+        print('Target Options: ')
+        print('   - home')
+        print('   - GPD')
+        sys.exit(2)
+    
+    if len(opts) > 0:
+        for opt, arg in opts:
+            if opt == '-h':
+                print('send_to.py -t <target>')
+                sys.exit()
+            elif opt in ("-t", "--target"):
+                target = arg
+            else:
+                target = "home"
+    else:
+        target = "home"
+            
+    print('Target:', target)
 
-    # Or set your own home position
-    home_joint_angles = dict()
-    home_joint_angles['left_e0'] = -0.4126408319411763
-    home_joint_angles['left_e1'] = 1.6766410011587571
-    home_joint_angles['left_s0'] = 0.3056456719861687
-    home_joint_angles['left_s1'] = -1.358339987672534
-    home_joint_angles['left_w0'] = 0.18331070415230694
-    home_joint_angles['left_w1'] = 0.5495486172599495
-    home_joint_angles['left_w2'] = -0.30833013836496814
+    if target == "GPD":
+        home_joint_angles = dict()
+        home_joint_angles['left_e0'] = -0.4126408319411763
+        home_joint_angles['left_e1'] = 1.6766410011587571
+        home_joint_angles['left_s0'] = 0.3056456719861687
+        home_joint_angles['left_s1'] = -1.358339987672534
+        home_joint_angles['left_w0'] = 0.18331070415230694
+        home_joint_angles['left_w1'] = 0.5495486172599495
+        home_joint_angles['left_w2'] = -0.30833013836496814
+    elif target == "home":
+        # Read home position set in Calibration.py
+        with open('/home/labuser/raf/set_positions/home_position.pkl', 'rb') as handle:
+            home_joint_angles = pickle.load(handle)
+        handle.close()
+    else:
+        print('Usage: send_to.py -t <target>')
+        print('Target Options: ')
+        print('   - home')
+        print('   - GPD')
+        sys.exit(2)
 
     run.move_to_angles(home_joint_angles)
 
     return 0
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

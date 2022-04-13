@@ -1,0 +1,19 @@
+#:import FadeTransition kivy.uix.screenmanager.FadeTransition
+
+MDBoxLayout:
+
+    ScreenManager:
+        id: screen_manager
+        transition: FadeTransition(duration=.2, clearcolor=app.theme_cls.bg_dark)
+
+        Home:
+            id: home
+            name: "home"
+
+            MDBackdrop:
+                id: backdrop
+                title: "Kitchen Sink"
+                header_text: "Menu:"
+                left_action_items: [["menu", lambda x: self.open()]]
+                # on_open: home.opening_animation_backdrop_components(backdrop, backlayer)
+                # on_close: home.closing_animation_backdrop_components(backdrop, backlayer)

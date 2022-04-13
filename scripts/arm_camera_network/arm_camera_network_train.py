@@ -22,16 +22,16 @@ from detectron2.data import build_detection_test_loader
 # print(cv2.getBuildInformation())
 
 # Register the dataset
-register_coco_instances("train_set", {}, "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset/train/annotations.json", "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset/train")
-register_coco_instances("test_set", {}, "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset/test/annotations.json", "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset/test")
+register_coco_instances("train_set", {}, "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset2/train/annotations.json", "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset2/train")
+# register_coco_instances("test_set", {}, "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset/test/annotations.json", "/home/labuser/ros_ws/src/odhe_ros/arm_camera_dataset/test")
 
 train_metadata = MetadataCatalog.get("train_set")
 print(train_metadata)
 dataset_dicts = DatasetCatalog.get("train_set")
 
-test_metadata = MetadataCatalog.get("test_set")
-print(test_metadata)
-dataset_dicts_test = DatasetCatalog.get("test_set")
+# test_metadata = MetadataCatalog.get("test_set")
+# print(test_metadata)
+# dataset_dicts_test = DatasetCatalog.get("test_set")
 
 # Visualize Training data
 for d in random.sample(dataset_dicts, 5):
@@ -43,13 +43,13 @@ for d in random.sample(dataset_dicts, 5):
     cv2.destroyAllWindows()
 
 # Visualize Test data
-for d in random.sample(dataset_dicts_test, 5):
-    img = cv2.imread(d["file_name"])
-    visualizer = Visualizer(img[:, :, ::-1], metadata=test_metadata, scale=0.5)
-    vis = visualizer.draw_dataset_dict(d)
-    cv2.imshow('Test Image', vis.get_image()[:, :, ::-1])
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+# for d in random.sample(dataset_dicts_test, 5):
+#     img = cv2.imread(d["file_name"])
+#     visualizer = Visualizer(img[:, :, ::-1], metadata=test_metadata, scale=0.5)
+#     vis = visualizer.draw_dataset_dict(d)
+#     cv2.imshow('Test Image', vis.get_image()[:, :, ::-1])
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
 
 # Train the model
 cfg = get_cfg()
@@ -64,17 +64,18 @@ cfg.SOLVER.IMS_PER_BATCH = 8
 cfg.SOLVER.BASE_LR = 0.001
 cfg.SOLVER.MAX_ITER = 50000  # 300 iterations seems good enough, but you can certainly train longer
 cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 512
-cfg.MODEL.ROI_HEADS.NUM_CLASSES = 5  # 5 classes (Plate, Carrot, Celery, Pretzel, Gripper)
+cfg.MODEL.ROI_HEADS.NUM_CLASSES = 16
 
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 trainer = DefaultTrainer(cfg)
 trainer.resume_or_load(resume=False)
 trainer.train()
 
-cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_final.pth")
+cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, "model_annotationSet_final.pth")
 cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.9   # set the testing threshold for this model
-cfg.DATASETS.TEST = ("test_set")
-predictor = DefaultPredictor(cfg)
+# cfg.DATASETS.TEST = ("test_set")
+# cfg.TEST.EVAL_PERIOD = 100
+# predictor = DefaultPredictor(cfg)
 
 # for d in random.sample(dataset_dicts_test, 10):    
 #     im = cv2.imread(d["file_name"])
@@ -89,7 +90,7 @@ predictor = DefaultPredictor(cfg)
 #     cv2.waitKey(0)
 
 # Evaluate Performance
-evaluator = COCOEvaluator("test_set", ("bbox", "segm"), False, output_dir="./output/")
-test_loader = build_detection_test_loader(cfg, "test_set")
-print(inference_on_dataset(trainer.model, test_loader, evaluator))
+# evaluator = COCOEvaluator("test_set", ("bbox", "segm"), False, output_dir="./output/")
+# test_loader = build_detection_test_loader(cfg, "test_set")
+# print(inference_on_dataset(trainer.model, test_loader, evaluator))
 # # another equivalent way to evaluate the model is to use `trainer.test`

@@ -190,7 +190,7 @@ include_directories(
    scripts/dlt.py
   #  scripts/raf_setPos_demo.py
   #  scripts/raf_grasp_demo.py
-   scripts/send_to_home.py
+   scripts/send_to.py
   #  scripts/arm_camera_network/arm_camera_network_run.py
   #  scripts/arm_camera_network/arm_camera_network_train.py
   #  scripts/arm_camera_network/arm_camera_network_eval.py

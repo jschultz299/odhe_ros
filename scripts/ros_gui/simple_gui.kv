@@ -1,0 +1,67 @@
+FloatLayout:
+    canvas:
+        Color:
+            rgba: (1, 1, 1, 0.3)
+        Rectangle:
+            source: '/home/labuser/ros_ws/src/odhe_ros/scripts/ros_gui/gradient.jpg'
+            size: self.size
+            pos: self.pos
+
+    MDLabel:
+        id: my_label
+        text: "Press the Button"
+        halign: "center"
+        size_hint: 1, 1
+        pos_hint: {"center_x": .5, "center_y": .1}
+
+    MDRaisedButton:
+        id: my_button
+        text: "Press to Start"
+        size_hint: .1, .1
+        pos_hint: {"center_x": .5, "center_y": .25}
+        on_press: app.my_function(*args)
+
+    MDSlider:
+        id: my_slider
+        min: 0
+        max: 100
+        value: 40
+        hint: False
+        pos_hint: {"center_x": .5, "center_y": .4}
+        on_touch_move: app.slider_function(my_slider.value)
+
+    MDLabel:
+        id: slider_label
+        text: "Speed: %s" % int(my_slider.value)
+        halign: "center"
+        size_hint: 1, 1
+        pos_hint: {"center_x": .5, "center_y": .5}
+
+    MDLabel:
+        id: my_label2
+        canvas:
+            Color:
+                rgba: (1, 1, 1, 0.5)
+            RoundedRectangle:
+                source: '/home/labuser/ros_ws/src/odhe_ros/scripts/ros_gui/gradient.jpg'
+                size: self.size
+                pos: my_label2.pos
+                radius: [25,]
+        text: "Label"
+        halign: "center"
+        size_hint: 0.3, 0.3
+        pos_hint: {"center_x": 0.75, "center_y": .75}
+
+    MDRaisedButton:
+        id: my_button2
+        canvas:
+            Color:
+                rgba: (1, 1, 1, 0.5)
+            Rectangle:
+                source: '/home/labuser/ros_ws/src/odhe_ros/scripts/ros_gui/gradient.jpg'
+                size: self.size
+                pos: my_button2.pos
+        text: "Button"
+        halign: "center"
+        size_hint: 0.3, 0.3
+        pos_hint: {"center_x": 0.25, "center_y": .75}

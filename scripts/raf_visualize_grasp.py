@@ -14,6 +14,7 @@ import sys
 import copy
 import math
 import cv2
+import pickle
 
 import rospy
 import numpy as np
@@ -280,19 +281,15 @@ def main():
     rospy.init_node("RAF_dataCollection")
     limb = 'left'
     rate = rospy.Rate(100)
-    # Starting Joint angles for left arm
-    starting_joint_angles = {'left_e0': 0,
-                             'left_e1': 0.7735098122912198,
-                             'left_s0': 0,
-                             'left_s1': -0.966791391564782,
-                             'left_w0': 0,
-                             'left_w1': math.pi / 2,
-                             'left_w2': 0}
+    # Read home position set in Calibration.py
+    with open('/home/labuser/raf/set_positions/home_position.pkl', 'rb') as handle:
+        home_joint_angles = pickle.load(handle)
+    handle.close()
 
     run = RAF_dataCollection(limb)
 
     # Move to starting location
-    run.move_to_start(starting_joint_angles)
+    run.move_to_start(home_joint_angles)
 
     while not rospy.is_shutdown():
 
@@ -329,20 +326,28 @@ def main():
         # else:
         #     angle = -angle
 
+        # if height > width:
+        #     # Angle measured from horizontal axis (x-axis), counter-clockwise to line connecting box vertices 0 and 1
+        #     gripper_angle = abs(angle - 180)
+        #     mid = (int((box[3][0] + box[2][0]) / 2), int((box[3][1] + box[2][1]) / 2))
+        # else:
+        #     gripper_angle = abs(angle - 90)
+        #     mid = (int((box[3][0] + box[0][0]) / 2), int((box[3][1] + box[0][1]) / 2))
+
         if height > width:
             # Angle measured from horizontal axis (x-axis), counter-clockwise to line connecting box vertices 0 and 1
-            gripper_angle = abs(angle - 180)
-            mid = (int((box[3][0] + box[2][0]) / 2), int((box[3][1] + box[2][1]) / 2))
+            gripper_angle = abs(angle)
+            mid = (int((box[0][0] + box[1][0]) / 2), int((box[0][1] + box[1][1]) / 2))
         else:
-            gripper_angle = abs(angle - 90)
+            gripper_angle = abs(angle) + 90
             mid = (int((box[3][0] + box[0][0]) / 2), int((box[3][1] + box[0][1]) / 2))
 
 
         # Create a deadzone that defaults to a grip angle of 0 degrees
-        if (gripper_angle > 0 and gripper_angle <= 3):
-            gripper_angle = 0
-        elif (gripper_angle > 177 and gripper_angle <= 180):
-            gripper_angle = 0
+        # if (gripper_angle > 0 and gripper_angle <= 3):
+        #     gripper_angle = 0
+        # elif (gripper_angle > 177 and gripper_angle <= 180):
+        #     gripper_angle = 0
 
         # print("Gripper Angle: ", gripper_angle, "deg")
 
