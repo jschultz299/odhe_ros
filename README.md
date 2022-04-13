@@ -1,4 +1,4 @@
-# odhe_ros
+# Robot-Assisted Feeding
 ODHE ROS PACKAGE
 
 This is the ros package for the ODHE Grant Funded Project
@@ -15,7 +15,13 @@ the scene. The user then directs their gaze to the cup. When they are
 ready, the user issues a voice command such as "grab the cup". Baxter then 
 picks up the cup that the user was looking at and delivers it to in front 
 of the user's mouth. They then move their body to sip through a straw in 
-the cup. I actually don't think this demonstration will work in this 
+the cup. 
+
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/IMG_7340.png" width=50%>
+
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Object%20Detection%20Example.gif" width=50%>
+
+I actually don't think this demonstration will work in this 
 workspace because the launch file is in a different workspace. Originally, 
 we were using Ubuntu 18.04 because we couldn't get Baxter to work with ROS 
 Noetic and Python3. Then, I put in the effort to convert Baxter's code to 
