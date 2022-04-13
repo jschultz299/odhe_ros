@@ -30,14 +30,25 @@ transferred over, but some of the files did. Below are some of the files
 associated with this project iteration.
 
 Scripts:
-    cup_demo.py         The main file for the cup demo. Handles all code 
-                        logic, particularly the robot's motion.
-    cup_demo_short.py   I think this version was supposed to only perform
-                        one reach, or some other shortened version for 
-                        demonstration purposes. It looks very similar to 
-                        the code above, however.
-    record_data.py      Records the iSCAN information and robot data.
-    serial_read.py      Reads the serial data from the iSCAN.
+```bash
+cup_demo.py
+```
+The main file for the cup demo. Handles all code logic, particularly the robot's motion.
+
+```bash
+cup_demo_short.py   
+```
+I think this version was supposed to only perform one reach, or some other shortened version for demonstration purposes. It looks very similar to the code above, however.
+
+```bash
+record_data.py
+```
+Records the iSCAN information and robot data.
+
+```bash
+serial_read.py  
+```
+Reads the serial data from the iSCAN.
     
 The second iteration of this project got rid of the head-mounted eye 
 tracker. Also, we decided to interact with different food items on a 
