@@ -84,38 +84,65 @@ raf_study.launch
     - arm_camera_network.py
     - dlt.py
 ```
-raf.launch                      
+
+```bash
+raf.launch 
+```
 Top-level launch file for the project.
 
-camera_multiple.launch      
+```bash
+camera_multiple.launch     
+```
 Launches both the LIDAR and STEREO depth cameras. Requires serial numbers.
 
-tag_detection.py            
+```bash
+tag_detection.py         
+```
 Detects the AprilTag Fiducial markers and draws the tag coordinate frame.
 
+```bash
 arm_camera_network_run.py   
+```
 Detects food items on the plate. 
 
-dlt.py                     
+```bash
+dlt.py    
+```
 Defines the plane of the table and publishes DLT parameters.
 
 Scripts:
-    calibrate_camera.py             Runs the logic for performing the 
-                                    calibration which defines the camera 
-                                    in robot coordinates.
-    raf.py                          Main project script file. Handles all 
-                                    experiment logic and robot motion.
-    realtime_ros.py                 Currently not in the project workspace.
-                                    Located in face-alignment. This code 
-                                    detects the person's face.
+```bash
+calibrate_camera.py     
+```
+Runs the logic for performing the calibration which defines the camera in robot coordinates.
+
+```bash
+raf.py            
+```
+Main project script file. Handles all experiment logic and robot motion.
+
+```bash
+realtime_ros.py  
+```
+Currently not in the project workspace. Located in face-alignment. This code detects the person's face.
 
 Other Files:
-    raf_grasp_demo.py               Demonstrates picking up food items 
-                                    anywhere on the plate.
-    raf_setPos_demo.py              Demonstrates picking up a food item 
-                                    in a set position and orientation.
-    raf_visualization.py            Test code that draws GUI info for 
-                                    food item detection. This got 
-                                    integrated into raf.py now.
-    raf_visualize_grasp.py          Nice visualization for the position 
-                                    and orientation of food item.
+```bash
+raf_grasp_demo.py  
+```
+Demonstrates picking up food items anywhere on the plate.
+
+```bash
+raf_setPos_demo.py  
+```
+Demonstrates picking up a food item in a set position and orientation.
+
+```bash
+raf_visualization.py  
+```
+Test code that draws GUI info for food item detection. This got integrated into raf.py now.
+
+```bash
+raf_visualize_grasp.py   
+```
+Nice visualization for the position and orientation of food item.
