@@ -17,7 +17,7 @@ picks up the cup that the user was looking at and delivers it to in front
 of the user's mouth. They then move their body to sip through a straw in 
 the cup. 
 
-<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/IMG_7340.png" width=50%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/IMG_7340.png" width=40%>
 
 <img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Object%20Detection%20Example.gif" width=50%>
 
@@ -56,8 +56,11 @@ then turns to video the user's face. We used the face-alignment ROS
 package for facial keypoint detection. When the user open's their mouth, 
 Baxter approaches the user's face and releases the food item. 
 
-<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/System%20Overview.png" width=40%>
-<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Evaluation.png" width=40%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/System%20Overview.png" width=50%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Evaluation.png" width=50%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Baxter%20Arm.png" width=50%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/GUI.png" width=50%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Object%20Detection.png" width=40%>
 
 Below are the files associated with this project iteration.
 
