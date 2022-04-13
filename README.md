@@ -29,7 +29,7 @@ Python3 and I switched to Ubuntu 20.04. The workspace did not get
 transferred over, but some of the files did. Below are some of the files 
 associated with this project iteration.
 
-Scripts:
+### Scripts:
 ```bash
 cup_demo.py
 ```
@@ -76,7 +76,7 @@ Baxter approaches the user's face and releases the food item.
 
 Below are the files associated with this project iteration.
 
-Launch File:
+### Launch File:
 ```bash
 raf_study.launch
     - camera_multiple.launch
@@ -110,7 +110,7 @@ dlt.py
 ```
 Defines the plane of the table and publishes DLT parameters.
 
-Scripts:
+### Scripts:
 ```bash
 calibrate_camera.py     
 ```
@@ -126,7 +126,7 @@ realtime_ros.py
 ```
 Currently not in the project workspace. Located in face-alignment. This code detects the person's face.
 
-Other Files:
+### Other Files:
 ```bash
 raf_grasp_demo.py  
 ```
