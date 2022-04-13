@@ -4,9 +4,6 @@ ODHE ROS PACKAGE
 This is the ros package for the ODHE Grant Funded Project
 Robot-Assisted Feeding (RAF) for Individuals with Spinal Cord Injury
 
-Documentation created by Jack Schultz
-9/30/2021
-
 This ros workspace has been used to develop the whole  project,
 so different iterations of the project require different program files.
 
@@ -51,8 +48,12 @@ uses their eye movements to direct a cursor to a food item. After a short
 dwell time, the food item is selected. Baxter picks up the food item and 
 then turns to video the user's face. We used the face-alignment ROS 
 package for facial keypoint detection. When the user open's their mouth, 
-Baxter approaches the user's face and releases the food item. Below are 
-the files associated with this project iteration.
+Baxter approaches the user's face and releases the food item. 
+
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/System%20Overview.png" width=40%>
+<img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Evaluation.png" width=40%>
+
+Below are the files associated with this project iteration.
 
 Launch File:
     raf.launch                      Top-level launch file for the project.
