@@ -68,6 +68,8 @@ then turns to video the user's face. We used the face-alignment ROS
 package for facial keypoint detection. When the user open's their mouth, 
 Baxter approaches the user's face and releases the food item. 
 
+Check out a demo video [here](https://youtu.be/AmBzfEcXVCc)!
+
 <img src="https://github.com/jschultz299/odhe_ros/blob/main/images/System%20Overview.png" width=50%>
 <img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Evaluation.png" width=50%>
 <img src="https://github.com/jschultz299/odhe_ros/blob/main/images/Baxter%20Arm.png" width=50%>
