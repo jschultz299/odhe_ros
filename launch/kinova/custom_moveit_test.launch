@@ -5,6 +5,6 @@
     <arg name="start_delay_seconds" default="0"/>
 
     <!-- Launch the example in that namespace -->
-    <node name="moveit_example" pkg="kortex_examples" type="example_move_it_trajectories.py" ns="$(arg robot_name)" output="screen" launch-prefix="bash -c 'sleep $(arg start_delay_seconds); $0 $@' "/>
+    <node name="custom_moveit_test" pkg="odhe_ros" type="custom_moveit_test.py" ns="$(arg robot_name)" output="screen" launch-prefix="bash -c 'sleep $(arg start_delay_seconds); $0 $@' "/>
 
 </launch>
