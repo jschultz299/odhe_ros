@@ -55,7 +55,6 @@ add_message_files(
    EyeTracker.msg
    EyeTracker2.msg
    EndpointState.msg
-   Result.msg
    DltParams.msg
    TagDetection.msg
    TagDetectionArray.msg
