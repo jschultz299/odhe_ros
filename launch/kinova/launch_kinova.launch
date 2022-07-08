@@ -1,15 +1,20 @@
 <launch>
 
+    <arg name="IP_ADDRESS" default="137.148.209.45"/>
+
     <!--Launch the Kortex Driver-->
     <include file="$(find kortex_driver)/launch/kortex_driver.launch">
         <arg name="dof" value="6"/>
         <arg name="gripper" value="robotiq_2f_140"/>
         <arg name="use_hard_limits" value="true"/>
         <arg name="start_rviz" value="false"/>
+        <arg name="ip_address" value="$(arg IP_ADDRESS)"/>
     </include>
 
     <!--Launch the Kinova Vision Subsystem-->
-    <include file="$(find kinova_vision)/launch/kinova_vision_rgbd.launch"/>
+    <include file="$(find kinova_vision)/launch/kinova_vision_rgbd.launch">
+        <arg name="device" value="$(arg IP_ADDRESS)"/>
+    </include>
 
     <!--Start Rviz with Custom Config-->
     <node name="rviz" pkg="rviz" type="rviz" ns="my_gen3" output="log" args="-f base_link -d $(find odhe_ros)/rviz/kinova_vision.rviz"/>
