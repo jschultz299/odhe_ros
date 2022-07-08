@@ -9,8 +9,6 @@ import moveit_commander
 import moveit_msgs.msg
 from math import pi
 
-# odhe_ros github token: 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
-
 class ExampleMoveItTrajectories(object):
   """ExampleMoveItTrajectories"""
   def __init__(self):
