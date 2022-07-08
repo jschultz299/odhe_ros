@@ -1,53 +1,15 @@
 #!/usr/bin/env python3
 
-# Software License Agreement (BSD License)
-#
-# Copyright (c) 2013, SRI International
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#  * Neither the name of SRI International nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# Author: Acorn Pooley, Mike Lautman
-
-# Inspired from http://docs.ros.org/kinetic/api/moveit_tutorials/html/doc/move_group_python_interface/move_group_python_interface_tutorial.html
-# Modified by Alexandre Vannobel to test the FollowJointTrajectory Action Server for the Kinova Gen3 robot
-
 # To run this node in a given namespace with rosrun (for example 'my_gen3'), start a Kortex driver and then run : 
 # rosrun kortex_examples example_moveit_trajectories.py __ns:=my_gen3
 
 import sys
-import time
 import rospy
 import moveit_commander
 import moveit_msgs.msg
-import geometry_msgs.msg
 from math import pi
-from std_srvs.srv import Empty
+
+# odhe_ros github token: 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
 
 class ExampleMoveItTrajectories(object):
   """ExampleMoveItTrajectories"""
@@ -56,7 +18,7 @@ class ExampleMoveItTrajectories(object):
     # Initialize the node
     super(ExampleMoveItTrajectories, self).__init__()
     moveit_commander.roscpp_initialize(sys.argv)
-    rospy.init_node('example_move_it_trajectories')
+    rospy.init_node('custom_moveit_test')
 
     try:
       self.is_gripper_present = rospy.get_param(rospy.get_namespace() + "is_gripper_present", False)
@@ -86,7 +48,6 @@ class ExampleMoveItTrajectories(object):
       self.is_init_success = False
     else:
       self.is_init_success = True
-
 
   def reach_named_position(self, target):
     arm_group = self.arm_group
@@ -129,6 +90,30 @@ class ExampleMoveItTrajectories(object):
       joint_positions[4] = 0
       joint_positions[5] = pi/2
     arm_group.set_joint_value_target(joint_positions)
+    
+    # Plan and execute in one command
+    success &= arm_group.go(wait=True)
+
+    # Show joint positions after movement
+    new_joint_positions = arm_group.get_current_joint_values()
+    rospy.loginfo("Printing current joint positions after movement :")
+    for p in new_joint_positions: rospy.loginfo(p)
+    return success
+
+  def move_to_joint_angles(self, joint_angles, tolerance):
+    arm_group = self.arm_group
+    success = True
+
+    # Get the current joint positions
+    joint_positions = arm_group.get_current_joint_values()
+    rospy.loginfo("Printing current joint positions before movement :")
+    for p in joint_positions: rospy.loginfo(p)
+
+    # Set the goal joint tolerance
+    self.arm_group.set_goal_joint_tolerance(tolerance)
+
+    # Set the joint target configuration
+    arm_group.set_joint_value_target(joint_angles)
     
     # Plan and execute in one command
     success &= arm_group.go(wait=True)
@@ -184,60 +169,28 @@ def main():
 
   # For testing purposes
   success = example.is_init_success
-  try:
-      rospy.delete_param("/kortex_examples_test_results/moveit_general_python")
-  except:
-      pass
 
-  if success:
-    rospy.loginfo("Reaching Named Target Vertical...")
-    success &= example.reach_named_position("vertical")
-    print (success)
-  
-  if success:
-    rospy.loginfo("Reaching Joint Angles...")  
-    success &= example.reach_joint_angles(tolerance=0.01) #rad
-    print (success)
-  
-  if success:
-    rospy.loginfo("Reaching Named Target Home...")
-    success &= example.reach_named_position("home")
-    print (success)
+  # Define poses
+  table_joints_deg =[-90, 30, -60, 0, -90, 90]
+  table_joints = [value * (pi / 180) for value in table_joints_deg]
 
-  if success:
-    rospy.loginfo("Reaching Cartesian Pose...")
-    
-    actual_pose = example.get_cartesian_pose()
-    actual_pose.position.z -= 0.2
-    success &= example.reach_cartesian_pose(pose=actual_pose, tolerance=0.01, constraints=None)
-    print (success)
-    
-  if example.degrees_of_freedom == 7 and success:
-    rospy.loginfo("Reach Cartesian Pose with constraints...")
-    # Get actual pose
-    actual_pose = example.get_cartesian_pose()
-    actual_pose.position.y -= 0.3
-    
-    # Orientation constraint (we want the end effector to stay the same orientation)
-    constraints = moveit_msgs.msg.Constraints()
-    orientation_constraint = moveit_msgs.msg.OrientationConstraint()
-    orientation_constraint.orientation = actual_pose.orientation
-    constraints.orientation_constraints.append(orientation_constraint)
-
-    # Send the goal
-    success &= example.reach_cartesian_pose(pose=actual_pose, tolerance=0.01, constraints=constraints)
-
+  # Open gripper
   if example.is_gripper_present and success:
     rospy.loginfo("Opening the gripper...")
     success &= example.reach_gripper_position(0)
     print (success)
 
-    rospy.loginfo("Closing the gripper 50%...")
-    success &= example.reach_gripper_position(0.5)
+  # Move to Home
+  if success:
+    rospy.loginfo("Reaching Named Target Home...")
+    success &= example.reach_named_position("home")
     print (success)
 
-  # For testing purposes
-  rospy.set_param("/kortex_examples_test_results/moveit_general_python", success)
+  # Move to View Table
+  if success:
+    rospy.loginfo("Reaching Joint Angles...")
+    success &= example.move_to_joint_angles(table_joints, tolerance=0.01) #rad
+    print (success)
 
   if not success:
       rospy.logerr("The example encountered an error.")

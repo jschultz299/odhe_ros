@@ -1,0 +1,16 @@
+<launch>
+
+    <!--Launch the Kortex Driver-->
+    <include file="$(find kortex_driver)/launch/kortex_driver.launch">
+        <arg name="dof" value="6"/>
+        <arg name="gripper" value="robotiq_2f_140"/>
+        <arg name="use_hard_limits" value="true"/>
+        <arg name="start_rviz" value="false"/>
+    </include>
+
+    <!--Launch the Kinova Vision Subsystem-->
+    <include file="$(find kinova_vision)/launch/kinova_vision_rgbd.launch"/>
+
+    <!--Start Rviz with Custom Config-->
+    <node name="rviz" pkg="rviz" type="rviz" ns="my_gen3" output="log" args="-f base_link -d $(find odhe_ros)/rviz/kinova_vision.rviz"/>
+</launch>
