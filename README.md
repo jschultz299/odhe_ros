@@ -6,6 +6,8 @@ Robot-Assisted Feeding (RAF) for Individuals with Spinal Cord Injury
 This ros workspace has been used to develop the whole project,
 so different iterations of the project require different program files.
 
+This repo is not intended to be cloned into a ros workspace and be useful right away. In the future, I will upload a cleaned and maintained repo for this purpose.
+
 ## Head-Mounted System
 The first iteration of the project used the iSCAN etl-600 wearable
 eye tracker. We used a faster-RCNN object detection network to detect cups, 
