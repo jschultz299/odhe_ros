@@ -3,6 +3,10 @@
 arm_camera_dataset/
 arm_camera_dataset2/
 scene_camera_dataset/
+*.mp4
+*.mov
+*.avi
+*.pkl
 
 # Default ROS ignored files
 devel/
